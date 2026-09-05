@@ -35,6 +35,45 @@ function minuteFromClientX(clientX: number, bounds: DOMRect): number {
   return clamp(Math.round(progress * 24 * 60), 0, MAX_MINUTE)
 }
 
+function todClassForHour(hour: number): string {
+  if (hour >= 6 && hour <= 7) {
+    return 'tod_m'
+  }
+  if (hour >= 8 && hour <= 17) {
+    return 'tod_d'
+  }
+  if (hour >= 18 && hour <= 21) {
+    return 'tod_e'
+  }
+  return 'tod_n'
+}
+
+function tickToneClass(todClass: string, weekend: boolean): string {
+  if (weekend) {
+    if (todClass === 'tod_m') {
+      return 'bg-rose-100'
+    }
+    if (todClass === 'tod_d') {
+      return 'bg-rose-50'
+    }
+    if (todClass === 'tod_e') {
+      return 'bg-rose-100/80'
+    }
+    return 'bg-rose-50/80'
+  }
+
+  if (todClass === 'tod_m') {
+    return 'bg-slate-100'
+  }
+  if (todClass === 'tod_d') {
+    return 'bg-white'
+  }
+  if (todClass === 'tod_e') {
+    return 'bg-slate-100/70'
+  }
+  return 'bg-slate-50'
+}
+
 export function TimezoneTableGrid() {
   const search = useAppSearch()
   const sortedZones = useSortedZones()
@@ -113,45 +152,6 @@ export function TimezoneTableGrid() {
     }).format(new Date(timestamp))
 
     return Number.parseInt(hour, 10)
-  }
-
-  function todClassForHour(hour: number): string {
-    if (hour >= 6 && hour <= 7) {
-      return 'tod_m'
-    }
-    if (hour >= 8 && hour <= 17) {
-      return 'tod_d'
-    }
-    if (hour >= 18 && hour <= 21) {
-      return 'tod_e'
-    }
-    return 'tod_n'
-  }
-
-  function tickToneClass(todClass: string, isWeekend: boolean): string {
-    if (isWeekend) {
-      if (todClass === 'tod_m') {
-        return 'bg-rose-100'
-      }
-      if (todClass === 'tod_d') {
-        return 'bg-rose-50'
-      }
-      if (todClass === 'tod_e') {
-        return 'bg-rose-100/80'
-      }
-      return 'bg-rose-50/80'
-    }
-
-    if (todClass === 'tod_m') {
-      return 'bg-slate-100'
-    }
-    if (todClass === 'tod_d') {
-      return 'bg-white'
-    }
-    if (todClass === 'tod_e') {
-      return 'bg-slate-100/70'
-    }
-    return 'bg-slate-50'
   }
 
   function updateSelectionFromPointer(event: PointerEvent<HTMLDivElement>) {
@@ -379,8 +379,8 @@ export function TimezoneTableGrid() {
                         `${previousDate.month}-${previousDate.day}` !==
                           `${currentDate.month}-${currentDate.day}`
                       const todClass = todClassForHour(localHour)
-                      const isWeekend = isWeekendInZone(timestamp, zone)
-                      const toneClass = tickToneClass(todClass, isWeekend)
+                      const weekendCell = isWeekendInZone(timestamp, zone)
+                      const toneClass = tickToneClass(todClass, weekendCell)
                       const isCurrentHour =
                         isToday && nowMinute >= minute && nowMinute < minute + SLOT_STEP
 

@@ -20,6 +20,14 @@ const rootRoute = createRootRoute({
       replace: true,
     })
   },
+  errorComponent: function RootError() {
+    return (
+      <main className="mx-auto grid min-h-svh max-w-[40rem] place-content-center gap-2 p-6 text-slate-900">
+        <h1 className="text-xl font-semibold">Something went wrong</h1>
+        <p className="text-sm text-slate-600">Reload the page to try again.</p>
+      </main>
+    )
+  },
   component: function RootLayout() {
     return (
       <>

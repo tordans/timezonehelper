@@ -1,0 +1,7 @@
+{
+  "semi": false,
+  "endOfLine": "lf",
+  "insertFinalNewline": true,
+  "sortImports": true,
+  "sortTailwindcss": true
+}

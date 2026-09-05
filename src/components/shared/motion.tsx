@@ -28,7 +28,7 @@ export function FadeInOnMount({ children, delay }: FadeInOnMountProps) {
   return (
     <MotionDiv
       initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: [0, 1], y: [8, 0] }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{
         duration: prefersReducedMotion ? 0 : 0.4,
         delay: prefersReducedMotion ? 0 : delay,

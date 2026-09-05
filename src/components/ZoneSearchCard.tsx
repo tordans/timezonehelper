@@ -109,7 +109,7 @@ export function ZoneSearchCard() {
             key="hint"
             className="mt-3 text-sm text-slate-500"
             initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: [0, 1], y: [6, 0] }}
+            animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration }}
           >
@@ -122,7 +122,7 @@ export function ZoneSearchCard() {
             role="listbox"
             id={LISTBOX_ID}
             initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: [0, 1], y: [6, 0] }}
+            animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration }}
           >
@@ -133,7 +133,7 @@ export function ZoneSearchCard() {
                   className="text-slate-500"
                   role="presentation"
                   initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: [0, 1], y: [6, 0] }}
+                  animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration }}
                 >
@@ -149,7 +149,7 @@ export function ZoneSearchCard() {
                     key={result.zone}
                     role="presentation"
                     initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: [0, 1], y: [8, 0] }}
+                    animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
                     transition={{
                       duration,

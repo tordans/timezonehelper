@@ -1,28 +1,57 @@
-import { createRootRoute, createRoute, createRouter, Outlet } from "@tanstack/react-router"
-
-import App from "./App"
-import { normalizeSearch } from "./lib/search"
+import {
+  createRootRoute,
+  createRoute,
+  createRouter,
+  getRouteApi,
+  Outlet,
+  redirect,
+} from '@tanstack/react-router'
+import App from '@/App'
+import { TanStackAppDevtools } from '@/components/shared/devtools/TanStackAppDevtools'
+import { routerSearch } from '@/lib/router-search'
+import { appSearchSchema } from '@/lib/search'
 
 const rootRoute = createRootRoute({
+  beforeLoad: ({ location }) => {
+    const { pathname, searchStr, hash } = location
+    if (pathname.length <= 1 || !pathname.endsWith('/')) return
+    const stripped = pathname.replace(/\/+$/, '') || '/'
+    throw redirect({
+      href: `${stripped}${searchStr}${hash ? `#${hash}` : ''}`,
+      replace: true,
+    })
+  },
   component: function RootLayout() {
-    return <Outlet />
+    return (
+      <>
+        <Outlet />
+        <TanStackAppDevtools />
+      </>
+    )
   },
 })
 
-const indexRoute = createRoute({
+export const Route = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/",
-  validateSearch: (search) => normalizeSearch(search),
+  path: '/',
+  validateSearch: appSearchSchema,
   component: App,
 })
 
-const routeTree = rootRoute.addChildren([indexRoute])
+const routeTree = rootRoute.addChildren([Route])
 
 export const router = createRouter({
   routeTree,
+  trailingSlash: 'never',
+  parseSearch: routerSearch.parse,
+  stringifySearch: routerSearch.stringify,
+  defaultPreload: 'intent',
+  defaultPreloadStaleTime: 0,
 })
 
-declare module "@tanstack/react-router" {
+export const indexRouteApi = getRouteApi('/')
+
+declare module '@tanstack/react-router' {
   interface Register {
     router: typeof router
   }

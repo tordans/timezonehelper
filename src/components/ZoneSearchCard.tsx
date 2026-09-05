@@ -1,16 +1,16 @@
-import { useSearchActions } from "../hooks/use-app-search"
-import { useTimezoneSearch } from "../lib/timezone-search"
-import { useUiStore } from "../state/ui-store"
+import { useSearchActions } from '@/hooks/use-app-search'
+import { useTimezoneSearch } from '@/lib/timezone-search'
+import { useSearchQuery, useUiActions } from '@/state/ui-store'
 
 export function ZoneSearchCard() {
-  const query = useUiStore((state) => state.query)
-  const setQuery = useUiStore((state) => state.setQuery)
+  const query = useSearchQuery()
+  const { setQuery } = useUiActions()
   const results = useTimezoneSearch(query)
   const { addZone } = useSearchActions()
 
   function addZoneAndResetQuery(zone: string) {
     addZone(zone)
-    setQuery("")
+    setQuery('')
   }
 
   return (

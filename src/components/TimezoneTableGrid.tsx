@@ -1,8 +1,8 @@
-import { Fragment, useRef, type PointerEvent } from "react"
-
-import { useAppSearch, useSearchActions, useSortedZones } from "../hooks/use-app-search"
-import { clamp, formatMinute, parseMinute, roundToStep, toTimestampFromHome } from "../lib/time"
-import { useUiStore } from "../state/ui-store"
+import { Fragment, useRef, type PointerEvent } from 'react'
+import { useAppSearch, useSearchActions, useSortedZones } from '@/hooks/use-app-search'
+import { cn } from '@/lib/cn'
+import { clamp, formatMinute, parseMinute, roundToStep, toTimestampFromHome } from '@/lib/time'
+import { useDragState, useNowTimestamp, useUiActions } from '@/state/ui-store'
 
 const SLOT_STEP = 60
 const MAX_MINUTE = 24 * 60 - 5
@@ -20,9 +20,9 @@ export function TimezoneTableGrid() {
   const search = useAppSearch()
   const sortedZones = useSortedZones()
   const { setHome, removeZone, updateSearchPatch } = useSearchActions()
-  const nowTimestamp = useUiStore((state) => state.nowTimestamp)
-  const dragState = useUiStore((state) => state.dragState)
-  const setDragState = useUiStore((state) => state.setDragState)
+  const nowTimestamp = useNowTimestamp()
+  const dragState = useDragState()
+  const { setDragState } = useUiActions()
   const gridRef = useRef<HTMLDivElement | null>(null)
 
   const startMinute = parseMinute(search.start)
@@ -37,44 +37,44 @@ export function TimezoneTableGrid() {
     timestamp: number,
     zone: string,
   ): { weekday: string; month: string; day: string } {
-    const parts = new Intl.DateTimeFormat("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
+    const parts = new Intl.DateTimeFormat('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
       timeZone: zone,
     }).formatToParts(new Date(timestamp))
 
-    const weekday = parts.find((part) => part.type === "weekday")?.value ?? ""
-    const month = parts.find((part) => part.type === "month")?.value ?? ""
-    const day = parts.find((part) => part.type === "day")?.value ?? ""
+    const weekday = parts.find((part) => part.type === 'weekday')?.value ?? ''
+    const month = parts.find((part) => part.type === 'month')?.value ?? ''
+    const day = parts.find((part) => part.type === 'day')?.value ?? ''
     return { weekday, month, day }
   }
 
   function localHourParts(timestamp: number, zone: string): { hour: string; period: string } {
-    if (search.hourFormat === "24") {
-      const hour = new Intl.DateTimeFormat("en-GB", {
-        hour: "2-digit",
+    if (search.hourFormat === '24') {
+      const hour = new Intl.DateTimeFormat('en-GB', {
+        hour: '2-digit',
         hour12: false,
         timeZone: zone,
       }).format(new Date(timestamp))
 
-      return { hour, period: "" }
+      return { hour, period: '' }
     }
 
-    const parts = new Intl.DateTimeFormat("en-US", {
-      hour: "numeric",
+    const parts = new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric',
       hour12: true,
       timeZone: zone,
     }).formatToParts(new Date(timestamp))
 
-    const hour = parts.find((part) => part.type === "hour")?.value ?? ""
-    const period = (parts.find((part) => part.type === "dayPeriod")?.value ?? "").toLowerCase()
+    const hour = parts.find((part) => part.type === 'hour')?.value ?? ''
+    const period = (parts.find((part) => part.type === 'dayPeriod')?.value ?? '').toLowerCase()
     return { hour, period }
   }
 
   function localHourForClass(timestamp: number, zone: string): number {
-    const hour = new Intl.DateTimeFormat("en-GB", {
-      hour: "2-digit",
+    const hour = new Intl.DateTimeFormat('en-GB', {
+      hour: '2-digit',
       hour12: false,
       timeZone: zone,
     }).format(new Date(timestamp))
@@ -84,28 +84,28 @@ export function TimezoneTableGrid() {
 
   function todClassForHour(hour: number): string {
     if (hour >= 6 && hour <= 7) {
-      return "tod_m"
+      return 'tod_m'
     }
     if (hour >= 8 && hour <= 17) {
-      return "tod_d"
+      return 'tod_d'
     }
     if (hour >= 18 && hour <= 21) {
-      return "tod_e"
+      return 'tod_e'
     }
-    return "tod_n"
+    return 'tod_n'
   }
 
   function tickToneClass(todClass: string): string {
-    if (todClass === "tod_m") {
-      return "bg-slate-100"
+    if (todClass === 'tod_m') {
+      return 'bg-slate-100'
     }
-    if (todClass === "tod_d") {
-      return "bg-white"
+    if (todClass === 'tod_d') {
+      return 'bg-white'
     }
-    if (todClass === "tod_e") {
-      return "bg-slate-100/70"
+    if (todClass === 'tod_e') {
+      return 'bg-slate-100/70'
     }
-    return "bg-slate-50"
+    return 'bg-slate-50'
   }
 
   function updateSelectionFromPointer(event: PointerEvent<HTMLDivElement>) {
@@ -119,7 +119,7 @@ export function TimezoneTableGrid() {
     const roundedMinute = clamp(roundToStep(rawMinute, step), 0, 24 * 60 - step)
     const minimumSpan = step
 
-    if (dragState.mode === "create") {
+    if (dragState.mode === 'create') {
       const start = Math.min(dragState.anchor, roundedMinute)
       const end = Math.max(dragState.anchor, roundedMinute) + minimumSpan
       updateSearchPatch({
@@ -129,7 +129,7 @@ export function TimezoneTableGrid() {
       return
     }
 
-    if (dragState.mode === "resize-start") {
+    if (dragState.mode === 'resize-start') {
       const start = clamp(roundedMinute, 0, timelineEnd - minimumSpan)
       updateSearchPatch({
         start: formatMinute(start),
@@ -146,7 +146,7 @@ export function TimezoneTableGrid() {
   function startDrag(event: PointerEvent<HTMLDivElement>) {
     event.preventDefault()
     const target = event.target as HTMLElement
-    if (target.closest("button")) {
+    if (target.closest('button')) {
       return
     }
     if (!gridRef.current) {
@@ -160,7 +160,7 @@ export function TimezoneTableGrid() {
       0,
       24 * 60 - step,
     )
-    setDragState({ mode: "create", anchor })
+    setDragState({ mode: 'create', anchor })
     event.currentTarget.setPointerCapture(event.pointerId)
     updateSearchPatch({
       start: formatMinute(anchor),
@@ -172,7 +172,7 @@ export function TimezoneTableGrid() {
     event.preventDefault()
     event.stopPropagation()
     setDragState({
-      mode: "resize-start",
+      mode: 'resize-start',
       anchor: timelineStart,
     })
   }
@@ -181,7 +181,7 @@ export function TimezoneTableGrid() {
     event.preventDefault()
     event.stopPropagation()
     setDragState({
-      mode: "resize-end",
+      mode: 'resize-end',
       anchor: timelineEnd,
     })
   }
@@ -227,10 +227,10 @@ export function TimezoneTableGrid() {
                     {zone}
                   </strong>
                   <small className="text-[11px] text-slate-500">
-                    {new Intl.DateTimeFormat("en-US", {
-                      hour: "numeric",
-                      minute: "2-digit",
-                      hour12: search.hourFormat !== "24",
+                    {new Intl.DateTimeFormat('en-US', {
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      hour12: search.hourFormat !== '24',
                       timeZone: zone,
                     }).format(new Date(nowTimestamp))}
                   </small>
@@ -274,14 +274,19 @@ export function TimezoneTableGrid() {
                   `${previousDate.month}-${previousDate.day}` !==
                     `${currentDate.month}-${currentDate.day}`
                 const todClass = todClassForHour(localHour)
-                const zoneLabel = zone.split("/").at(-1)?.replace("_", " ") ?? ""
+                const zoneLabel = zone.split('/').at(-1)?.replace('_', ' ') ?? ''
                 const toneClass = tickToneClass(todClass)
-                const isSelectedClass = selected ? "!bg-blue-100" : ""
-                const boundaryClass = isBoundary ? "border-r-2 border-r-slate-300" : ""
+                const isSelectedClass = selected ? '!bg-blue-100' : ''
+                const boundaryClass = isBoundary ? 'border-r-2 border-r-slate-300' : ''
 
                 return (
                   <div
-                    className={`grid min-h-[34px] place-items-center border-r border-b border-slate-100 py-0.5 text-center ${toneClass} ${isSelectedClass} ${boundaryClass}`}
+                    className={cn(
+                      'grid min-h-[34px] place-items-center border-r border-b border-slate-100 py-0.5 text-center',
+                      toneClass,
+                      isSelectedClass,
+                      boundaryClass,
+                    )}
                     key={`${zone}-${minute}`}
                   >
                     {isBoundary ? (
@@ -304,7 +309,7 @@ export function TimezoneTableGrid() {
                         <u className="text-[10px] leading-none text-slate-500 no-underline">
                           {local.period}
                         </u>
-                        {search.hourFormat !== "24" && (
+                        {search.hourFormat !== '24' && (
                           <em className="text-[10px] leading-none text-slate-400 not-italic">
                             {zoneLabel}
                           </em>

@@ -1,13 +1,13 @@
-import { TZDate, tzOffset } from "@date-fns/tz"
+import { TZDate, tzOffset } from '@date-fns/tz'
 
-export type HourFormat = "12" | "24" | "mx"
+export type HourFormat = '12' | '24' | 'mx'
 
 const MINUTES_PER_DAY = 24 * 60
 
 export function parseMinute(value: string): number {
-  const [hText, mText] = value.split(":")
-  const hour = Number.parseInt(hText ?? "", 10)
-  const minute = Number.parseInt(mText ?? "", 10)
+  const [hText, mText] = value.split(':')
+  const hour = Number.parseInt(hText ?? '', 10)
+  const minute = Number.parseInt(mText ?? '', 10)
 
   if (Number.isNaN(hour) || Number.isNaN(minute)) {
     return 9 * 60
@@ -20,8 +20,8 @@ export function formatMinute(value: number): string {
   const safe = clamp(Math.floor(value), 0, MINUTES_PER_DAY - 1)
   const hours = Math.floor(safe / 60)
   const minutes = safe % 60
-  const hh = hours.toString().padStart(2, "0")
-  const mm = minutes.toString().padStart(2, "0")
+  const hh = hours.toString().padStart(2, '0')
+  const mm = minutes.toString().padStart(2, '0')
   return `${hh}:${mm}`
 }
 
@@ -38,10 +38,10 @@ export function toTimestampFromHome(
   homeZone: string,
   minuteOfDay: number,
 ): number {
-  const [yearText, monthText, dayText] = dateIso.split("-")
-  const year = Number.parseInt(yearText ?? "", 10)
-  const month = Number.parseInt(monthText ?? "", 10)
-  const day = Number.parseInt(dayText ?? "", 10)
+  const [yearText, monthText, dayText] = dateIso.split('-')
+  const year = Number.parseInt(yearText ?? '', 10)
+  const month = Number.parseInt(monthText ?? '', 10)
+  const day = Number.parseInt(dayText ?? '', 10)
   const clampedMinute = clamp(Math.floor(minuteOfDay), 0, MINUTES_PER_DAY - 1)
   const hour = Math.floor(clampedMinute / 60)
   const minute = clampedMinute % 60
@@ -50,43 +50,7 @@ export function toTimestampFromHome(
   return zonedDate.getTime()
 }
 
-export function formatTimestampForZone(
-  timestamp: number,
-  zone: string,
-  hourFormat: HourFormat,
-): string {
-  if (hourFormat === "mx") {
-    return new Intl.DateTimeFormat(undefined, {
-      hour: "numeric",
-      minute: "2-digit",
-      timeZone: zone,
-    }).format(new Date(timestamp))
-  }
-
-  return new Intl.DateTimeFormat(undefined, {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: hourFormat === "12",
-    timeZone: zone,
-  }).format(new Date(timestamp))
-}
-
-export function formatDateForZone(timestamp: number, zone: string): string {
-  return new Intl.DateTimeFormat(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "2-digit",
-    timeZone: zone,
-  }).format(new Date(timestamp))
-}
-
-export function isWeekendInZone(timestamp: number, zone: string): boolean {
-  const zoned = new TZDate(timestamp, zone)
-  const day = zoned.getDay()
-  return day === 0 || day === 6
-}
-
-export function zoneDeltaHours(baseZone: string, compareZone: string, timestamp: number): number {
+function zoneDeltaHours(baseZone: string, compareZone: string, timestamp: number): number {
   const baseOffset = tzOffset(baseZone, new Date(timestamp))
   const compareOffset = tzOffset(compareZone, new Date(timestamp))
   return (compareOffset - baseOffset) / 60
@@ -113,16 +77,8 @@ export function sortZonesByOffset(zones: string[], homeZone: string, dateIso: st
 
 export function todayInZone(zone: string): string {
   const now = new Date()
-  const year = new Intl.DateTimeFormat("en-CA", { year: "numeric", timeZone: zone }).format(now)
-  const month = new Intl.DateTimeFormat("en-CA", { month: "2-digit", timeZone: zone }).format(now)
-  const day = new Intl.DateTimeFormat("en-CA", { day: "2-digit", timeZone: zone }).format(now)
+  const year = new Intl.DateTimeFormat('en-CA', { year: 'numeric', timeZone: zone }).format(now)
+  const month = new Intl.DateTimeFormat('en-CA', { month: '2-digit', timeZone: zone }).format(now)
+  const day = new Intl.DateTimeFormat('en-CA', { day: '2-digit', timeZone: zone }).format(now)
   return `${year}-${month}-${day}`
-}
-
-export function addLeadingSign(value: number): string {
-  if (value > 0) {
-    return `+${value}`
-  }
-
-  return `${value}`
 }

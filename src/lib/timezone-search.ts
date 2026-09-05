@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query"
+import { useQuery } from '@tanstack/react-query'
 
 export type ZoneResult = {
   zone: string
@@ -6,21 +6,21 @@ export type ZoneResult = {
 }
 
 async function searchTimezones(query: string): Promise<ZoneResult[]> {
-  const { getTimeZones } = await import("@vvo/tzdb")
+  const { getTimeZones } = await import('@vvo/tzdb')
 
   const byZone = getTimeZones()
     .map((zoneInfo) => {
       const city = zoneInfo.mainCities[0] ?? zoneInfo.name
-      const abbreviation = zoneInfo.abbreviation ?? ""
+      const abbreviation = zoneInfo.abbreviation ?? ''
       const searchText = [
         zoneInfo.name,
         zoneInfo.alternativeName,
         abbreviation,
-        zoneInfo.group.join(" "),
-        zoneInfo.mainCities.join(" "),
+        zoneInfo.group.join(' '),
+        zoneInfo.mainCities.join(' '),
         city,
       ]
-        .join(" ")
+        .join(' ')
         .toLowerCase()
 
       return {
@@ -47,7 +47,7 @@ async function searchTimezones(query: string): Promise<ZoneResult[]> {
 export function useTimezoneSearch(query: string): ZoneResult[] {
   const normalizedQuery = query.trim().toLowerCase()
   const { data = [] } = useQuery({
-    queryKey: ["timezone-search", normalizedQuery],
+    queryKey: ['timezone-search', normalizedQuery],
     queryFn: async () => searchTimezones(normalizedQuery),
     staleTime: Number.POSITIVE_INFINITY,
     gcTime: Number.POSITIVE_INFINITY,

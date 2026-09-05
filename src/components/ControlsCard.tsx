@@ -1,4 +1,11 @@
-import { useAppSearch, useSearchActions } from "../hooks/use-app-search"
+import { useAppSearch, useSearchActions } from '@/hooks/use-app-search'
+import type { HourFormat } from '@/lib/time'
+
+const HOUR_FORMATS = ['12', '24', 'mx'] as const
+
+function isHourFormat(value: string): value is HourFormat {
+  return (HOUR_FORMATS as readonly string[]).includes(value)
+}
 
 export function ControlsCard() {
   const search = useAppSearch()
@@ -21,9 +28,11 @@ export function ControlsCard() {
         <select
           className="rounded-md border border-slate-300 bg-white px-2.5 py-2 text-sm"
           value={search.hourFormat}
-          onChange={(event) =>
-            updateSearchPatch({ hourFormat: event.target.value as "12" | "24" | "mx" })
-          }
+          onChange={(event) => {
+            if (isHourFormat(event.target.value)) {
+              updateSearchPatch({ hourFormat: event.target.value })
+            }
+          }}
         >
           <option value="mx">MX</option>
           <option value="12">12h</option>

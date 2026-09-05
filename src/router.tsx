@@ -2,7 +2,6 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
-  getRouteApi,
   Outlet,
   redirect,
 } from '@tanstack/react-router'
@@ -48,8 +47,6 @@ export const router = createRouter({
   defaultPreload: 'intent',
   defaultPreloadStaleTime: 0,
 })
-
-export const indexRouteApi = getRouteApi('/')
 
 declare module '@tanstack/react-router' {
   interface Register {

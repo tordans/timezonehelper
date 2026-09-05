@@ -1,14 +1,30 @@
 import { Fragment, useRef, type PointerEvent } from 'react'
 import { useAppSearch, useSearchActions, useSortedZones } from '@/hooks/use-app-search'
 import { cn } from '@/lib/cn'
-import { clamp, formatMinute, parseMinute, roundToStep, toTimestampFromHome } from '@/lib/time'
+import {
+  addLeadingSign,
+  clamp,
+  formatMinute,
+  isWeekendInZone,
+  minuteOfDayInZone,
+  parseMinute,
+  roundToStep,
+  todayInZone,
+  toTimestampFromHome,
+  zoneAbbreviation,
+  zoneDeltaHours,
+} from '@/lib/time'
+import { getZoneMeta, zoneUsesHour12 } from '@/lib/zone-meta'
 import { useDragState, useNowTimestamp, useUiActions } from '@/state/ui-store'
 
 const SLOT_STEP = 60
 const MAX_MINUTE = 24 * 60 - 5
-const LABEL_WIDTH = 200
+const LABEL_WIDTH = 240
 const CELL_WIDTH = 54
 const SLOT_MARKERS = Array.from({ length: 24 }, (_, index) => index * SLOT_STEP)
+
+const rowActionClassName =
+  'min-h-11 cursor-pointer touch-manipulation select-none rounded border border-slate-300 bg-slate-50 px-3 text-[11px] active:bg-indigo-100 hover-fine:bg-indigo-50'
 
 function minuteFromClientX(clientX: number, bounds: DOMRect): number {
   const relativeX = clamp(clientX - bounds.left - LABEL_WIDTH, 0, bounds.width - LABEL_WIDTH)
@@ -23,15 +39,20 @@ export function TimezoneTableGrid() {
   const nowTimestamp = useNowTimestamp()
   const dragState = useDragState()
   const { setDragState } = useUiActions()
+  const scrollRef = useRef<HTMLDivElement | null>(null)
   const gridRef = useRef<HTMLDivElement | null>(null)
 
   const startMinute = parseMinute(search.start)
   const endMinute = parseMinute(search.end)
   const timelineStart = Math.min(startMinute, endMinute)
   const timelineEnd = Math.max(startMinute, endMinute)
+  const offsetSampleTimestamp = toTimestampFromHome(search.date, search.home, 12 * 60)
+  const isToday = search.date === todayInZone(search.home)
+  const nowMinute = minuteOfDayInZone(nowTimestamp, search.home)
 
   const selectionLeft = LABEL_WIDTH + (timelineStart / SLOT_STEP) * CELL_WIDTH
   const selectionWidth = Math.max(6, ((timelineEnd - timelineStart) / SLOT_STEP) * CELL_WIDTH)
+  const nowLeft = LABEL_WIDTH + (nowMinute / SLOT_STEP) * CELL_WIDTH
 
   function localDateParts(
     timestamp: number,
@@ -51,7 +72,10 @@ export function TimezoneTableGrid() {
   }
 
   function localHourParts(timestamp: number, zone: string): { hour: string; period: string } {
-    if (search.hourFormat === '24') {
+    const hour12 =
+      search.hourFormat === '24' ? false : search.hourFormat === '12' ? true : zoneUsesHour12(zone)
+
+    if (!hour12) {
       const hour = new Intl.DateTimeFormat('en-GB', {
         hour: '2-digit',
         hour12: false,
@@ -95,7 +119,20 @@ export function TimezoneTableGrid() {
     return 'tod_n'
   }
 
-  function tickToneClass(todClass: string): string {
+  function tickToneClass(todClass: string, isWeekend: boolean): string {
+    if (isWeekend) {
+      if (todClass === 'tod_m') {
+        return 'bg-rose-100'
+      }
+      if (todClass === 'tod_d') {
+        return 'bg-rose-50'
+      }
+      if (todClass === 'tod_e') {
+        return 'bg-rose-100/80'
+      }
+      return 'bg-rose-50/80'
+    }
+
     if (todClass === 'tod_m') {
       return 'bg-slate-100'
     }
@@ -161,16 +198,29 @@ export function TimezoneTableGrid() {
       24 * 60 - step,
     )
     setDragState({ mode: 'create', anchor })
-    event.currentTarget.setPointerCapture(event.pointerId)
     updateSearchPatch({
       start: formatMinute(anchor),
       end: formatMinute(clamp(anchor + step, step, MAX_MINUTE)),
     })
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId)
+    } catch {
+      // Untrusted or already-released pointers cannot capture.
+    }
+  }
+
+  function captureScrollPointer(event: PointerEvent<HTMLDivElement>) {
+    try {
+      scrollRef.current?.setPointerCapture(event.pointerId)
+    } catch {
+      // Untrusted or already-released pointers cannot capture.
+    }
   }
 
   function startResizeStart(event: PointerEvent<HTMLDivElement>) {
     event.preventDefault()
     event.stopPropagation()
+    captureScrollPointer(event)
     setDragState({
       mode: 'resize-start',
       anchor: timelineStart,
@@ -180,6 +230,7 @@ export function TimezoneTableGrid() {
   function startResizeEnd(event: PointerEvent<HTMLDivElement>) {
     event.preventDefault()
     event.stopPropagation()
+    captureScrollPointer(event)
     setDragState({
       mode: 'resize-end',
       anchor: timelineEnd,
@@ -191,136 +242,169 @@ export function TimezoneTableGrid() {
       <h2 className="mb-3 text-lg font-semibold text-slate-900">Meeting grid</h2>
       <div
         className="relative w-full touch-none overflow-auto rounded-lg border border-slate-200 font-sans text-xs select-none"
-        ref={gridRef}
+        ref={scrollRef}
         onPointerDown={startDrag}
         onPointerMove={updateSelectionFromPointer}
         onPointerUp={() => setDragState(null)}
+        onPointerCancel={() => setDragState(null)}
       >
-        <div
-          className="pointer-events-none absolute z-20 flex h-[26px] justify-between rounded-md border border-indigo-700 bg-indigo-500/20"
-          style={{ left: `${selectionLeft}px`, width: `${selectionWidth}px` }}
-        >
+        <div className="relative w-max min-w-full" ref={gridRef}>
+          {isToday && (
+            <div
+              className="pointer-events-none absolute inset-y-0 z-10 w-0.5 bg-indigo-600"
+              style={{ left: `${nowLeft}px` }}
+              aria-hidden="true"
+            />
+          )}
           <div
-            className="pointer-events-auto w-2.5 cursor-ew-resize rounded-sm bg-indigo-700"
-            onPointerDown={startResizeStart}
-          />
+            className="pointer-events-none absolute inset-y-0 z-20 flex justify-between rounded-md border border-indigo-700 bg-indigo-500/20"
+            style={{ left: `${selectionLeft}px`, width: `${selectionWidth}px` }}
+          >
+            <div
+              className="pointer-events-auto w-3 min-w-3 cursor-ew-resize touch-manipulation bg-indigo-700 select-none"
+              onPointerDown={startResizeStart}
+              aria-label="Resize selection start"
+            />
+            <div
+              className="pointer-events-auto w-3 min-w-3 cursor-ew-resize touch-manipulation bg-indigo-700 select-none"
+              onPointerDown={startResizeEnd}
+              aria-label="Resize selection end"
+            />
+          </div>
+
           <div
-            className="pointer-events-auto w-2.5 cursor-ew-resize rounded-sm bg-indigo-700"
-            onPointerDown={startResizeEnd}
-          />
-        </div>
+            className="grid w-max min-w-full items-stretch"
+            style={{
+              gridTemplateColumns: `${LABEL_WIDTH}px repeat(${SLOT_MARKERS.length}, ${CELL_WIDTH}px)`,
+            }}
+          >
+            {sortedZones.map((zone) => {
+              const meta = getZoneMeta(zone)
+              const isHome = zone === search.home
+              const deltaHours = zoneDeltaHours(search.home, zone, offsetSampleTimestamp)
+              const abbreviation = zoneAbbreviation(offsetSampleTimestamp, zone)
+              const offsetLabel = isHome ? '0' : addLeadingSign(deltaHours)
 
-        <div
-          className="grid w-max min-w-full items-stretch"
-          style={{
-            gridTemplateColumns: `${LABEL_WIDTH}px repeat(${SLOT_MARKERS.length}, ${CELL_WIDTH}px)`,
-          }}
-        >
-          {sortedZones.map((zone) => (
-            <Fragment key={zone}>
-              <div
-                className="sticky left-0 z-30 flex items-center justify-between gap-2 border-r border-b border-slate-200 bg-white px-2.5 py-2"
-                key={`label-${zone}`}
-              >
-                <div>
-                  <strong className="block text-[12px] leading-none font-semibold text-slate-800">
-                    {zone}
-                  </strong>
-                  <small className="text-[11px] text-slate-500">
-                    {new Intl.DateTimeFormat('en-US', {
-                      hour: 'numeric',
-                      minute: '2-digit',
-                      hour12: search.hourFormat !== '24',
-                      timeZone: zone,
-                    }).format(new Date(nowTimestamp))}
-                  </small>
-                </div>
-                <div className="flex gap-1">
-                  <button
-                    className="rounded border border-slate-300 bg-slate-50 px-1.5 py-0.5 text-[11px] hover:bg-indigo-50 disabled:opacity-40"
-                    type="button"
-                    disabled={zone === search.home}
-                    onClick={() => setHome(zone)}
-                  >
-                    Home
-                  </button>
-                  <button
-                    className="rounded border border-slate-300 bg-slate-50 px-1.5 py-0.5 text-[11px] hover:bg-indigo-50 disabled:opacity-40"
-                    type="button"
-                    disabled={search.zones.length <= 1}
-                    onClick={() => removeZone(zone)}
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-
-              {SLOT_MARKERS.map((minute) => {
-                const timestamp = toTimestampFromHome(search.date, search.home, minute)
-                const selected = minute >= timelineStart && minute < timelineEnd
-                const localHour = localHourForClass(timestamp, zone)
-                const local = localHourParts(timestamp, zone)
-                const currentDate = localDateParts(timestamp, zone)
-                const previousDate =
-                  minute > 0
-                    ? localDateParts(
-                        toTimestampFromHome(search.date, search.home, minute - SLOT_STEP),
-                        zone,
-                      )
-                    : null
-                const isBoundary =
-                  minute === 0 ||
-                  !previousDate ||
-                  `${previousDate.month}-${previousDate.day}` !==
-                    `${currentDate.month}-${currentDate.day}`
-                const todClass = todClassForHour(localHour)
-                const zoneLabel = zone.split('/').at(-1)?.replace('_', ' ') ?? ''
-                const toneClass = tickToneClass(todClass)
-                const isSelectedClass = selected ? '!bg-blue-100' : ''
-                const boundaryClass = isBoundary ? 'border-r-2 border-r-slate-300' : ''
-
-                return (
+              return (
+                <Fragment key={zone}>
                   <div
                     className={cn(
-                      'grid min-h-[34px] place-items-center border-r border-b border-slate-100 py-0.5 text-center',
-                      toneClass,
-                      isSelectedClass,
-                      boundaryClass,
+                      'sticky left-0 z-30 flex items-center justify-between gap-2 border-r border-b border-slate-200 px-2.5 py-2',
+                      isHome ? 'bg-indigo-50' : 'bg-white',
                     )}
-                    key={`${zone}-${minute}`}
                   >
-                    {isBoundary ? (
-                      <>
-                        <div className="text-[10px] leading-none text-slate-600">
-                          {currentDate.weekday}
-                        </div>
-                        <b className="text-[11px] leading-none font-semibold text-slate-700">
-                          {currentDate.month}
-                        </b>
-                        <i className="text-[11px] leading-none text-slate-700 not-italic">
-                          {currentDate.day}
-                        </i>
-                      </>
-                    ) : (
-                      <>
-                        <b className="text-[13px] leading-none font-bold text-slate-800">
-                          {local.hour}
-                        </b>
-                        <u className="text-[10px] leading-none text-slate-500 no-underline">
-                          {local.period}
-                        </u>
-                        {search.hourFormat !== '24' && (
-                          <em className="text-[10px] leading-none text-slate-400 not-italic">
-                            {zoneLabel}
-                          </em>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="block truncate text-[12px] leading-none font-semibold text-slate-800">
+                          {meta.city}
+                        </span>
+                        {isHome && (
+                          <span className="rounded-md bg-indigo-100 px-2 py-1 text-[11px] font-medium text-indigo-800">
+                            Home
+                          </span>
                         )}
-                      </>
+                      </div>
+                      <span className="mt-1 block text-[11px] text-slate-500">
+                        {abbreviation ? `${abbreviation} ` : ''}
+                        {offsetLabel}
+                      </span>
+                      <span className="block text-[11px] text-slate-500">
+                        {new Intl.DateTimeFormat('en-US', {
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: search.hourFormat !== '24',
+                          timeZone: zone,
+                        }).format(new Date(nowTimestamp))}
+                      </span>
+                    </div>
+                    {!isHome && (
+                      <div className="flex shrink-0 flex-col gap-1">
+                        <button
+                          className={rowActionClassName}
+                          type="button"
+                          onClick={() => setHome(zone)}
+                        >
+                          Set home
+                        </button>
+                        <button
+                          className={cn(
+                            rowActionClassName,
+                            'disabled:pointer-events-none disabled:opacity-40',
+                          )}
+                          type="button"
+                          disabled={search.zones.length <= 1}
+                          onClick={() => removeZone(zone)}
+                        >
+                          Remove
+                        </button>
+                      </div>
                     )}
                   </div>
-                )
-              })}
-            </Fragment>
-          ))}
+
+                  {SLOT_MARKERS.map((minute) => {
+                    const timestamp = toTimestampFromHome(search.date, search.home, minute)
+                    const selected = minute >= timelineStart && minute < timelineEnd
+                    const localHour = localHourForClass(timestamp, zone)
+                    const local = localHourParts(timestamp, zone)
+                    const currentDate = localDateParts(timestamp, zone)
+                    const previousDate =
+                      minute > 0
+                        ? localDateParts(
+                            toTimestampFromHome(search.date, search.home, minute - SLOT_STEP),
+                            zone,
+                          )
+                        : null
+                    const isBoundary =
+                      minute === 0 ||
+                      !previousDate ||
+                      `${previousDate.month}-${previousDate.day}` !==
+                        `${currentDate.month}-${currentDate.day}`
+                    const todClass = todClassForHour(localHour)
+                    const isWeekend = isWeekendInZone(timestamp, zone)
+                    const toneClass = tickToneClass(todClass, isWeekend)
+                    const isCurrentHour =
+                      isToday && nowMinute >= minute && nowMinute < minute + SLOT_STEP
+
+                    return (
+                      <div
+                        className={cn(
+                          'grid min-h-[34px] place-items-center border-r border-b border-slate-100 py-0.5 text-center',
+                          toneClass,
+                          selected && '!bg-blue-100',
+                          isCurrentHour &&
+                            'font-semibold text-indigo-800 ring-1 ring-indigo-300 ring-inset',
+                        )}
+                        key={`${zone}-${minute}`}
+                      >
+                        {isBoundary ? (
+                          <>
+                            <span className="text-[10px] leading-none text-slate-600">
+                              {currentDate.weekday}
+                            </span>
+                            <span className="text-[11px] leading-none font-semibold text-slate-700">
+                              {currentDate.month}
+                            </span>
+                            <span className="text-[11px] leading-none text-slate-700">
+                              {currentDate.day}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-[13px] leading-none font-bold text-slate-800">
+                              {local.hour}
+                            </span>
+                            <span className="text-[10px] leading-none text-slate-500">
+                              {local.period}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    )
+                  })}
+                </Fragment>
+              )
+            })}
+          </div>
         </div>
       </div>
     </section>

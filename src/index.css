@@ -7,6 +7,14 @@
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
 }
 
+@custom-variant hover-fine {
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      @slot;
+    }
+  }
+}
+
 body {
   font-family: var(--font-sans);
 }

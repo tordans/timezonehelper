@@ -1,5 +1,8 @@
-import { Fragment, useRef, type PointerEvent } from 'react'
+import { AnimatePresence, LayoutGroup } from 'motion/react'
+import { useRef, type PointerEvent } from 'react'
+import { MotionDiv } from '@/components/shared/motion'
 import { useAppSearch, useSearchActions, useSortedZones } from '@/hooks/use-app-search'
+import { useUiMotion } from '@/hooks/use-ui-motion'
 import { cn } from '@/lib/cn'
 import {
   addLeadingSign,
@@ -22,6 +25,7 @@ const MAX_MINUTE = 24 * 60 - 5
 const LABEL_WIDTH = 240
 const CELL_WIDTH = 54
 const SLOT_MARKERS = Array.from({ length: 24 }, (_, index) => index * SLOT_STEP)
+const NOW_LINE_OPACITY = [0.2, 1, 0.55, 1]
 
 const rowActionClassName =
   'min-h-11 cursor-pointer touch-manipulation select-none rounded border border-slate-300 bg-slate-50 px-3 text-[11px] active:bg-indigo-100 hover-fine:bg-indigo-50'
@@ -39,6 +43,7 @@ export function TimezoneTableGrid() {
   const nowTimestamp = useNowTimestamp()
   const dragState = useDragState()
   const { setDragState } = useUiActions()
+  const { duration, prefersReducedMotion } = useUiMotion()
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const gridRef = useRef<HTMLDivElement | null>(null)
 
@@ -53,6 +58,11 @@ export function TimezoneTableGrid() {
   const selectionLeft = LABEL_WIDTH + (timelineStart / SLOT_STEP) * CELL_WIDTH
   const selectionWidth = Math.max(6, ((timelineEnd - timelineStart) / SLOT_STEP) * CELL_WIDTH)
   const nowLeft = LABEL_WIDTH + (nowMinute / SLOT_STEP) * CELL_WIDTH
+  const zoneRowColumns = `${LABEL_WIDTH}px repeat(${SLOT_MARKERS.length}, ${CELL_WIDTH}px)`
+  const selectionTransition =
+    dragState || prefersReducedMotion
+      ? { duration: 0 }
+      : { type: 'tween' as const, duration: 0.18, ease: 'easeOut' as const }
 
   function localDateParts(
     timestamp: number,
@@ -250,15 +260,20 @@ export function TimezoneTableGrid() {
       >
         <div className="relative w-max min-w-full" ref={gridRef}>
           {isToday && (
-            <div
+            <MotionDiv
               className="pointer-events-none absolute inset-y-0 z-10 w-0.5 bg-indigo-600"
-              style={{ left: `${nowLeft}px` }}
+              style={{ left: nowLeft }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: NOW_LINE_OPACITY }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
               aria-hidden="true"
             />
           )}
-          <div
+          <MotionDiv
             className="pointer-events-none absolute inset-y-0 z-20 flex justify-between rounded-md border border-indigo-700 bg-indigo-500/20"
-            style={{ left: `${selectionLeft}px`, width: `${selectionWidth}px` }}
+            initial={false}
+            animate={{ left: `${selectionLeft}px`, width: `${selectionWidth}px` }}
+            transition={selectionTransition}
           >
             <div
               className="pointer-events-auto w-3 min-w-3 cursor-ew-resize touch-manipulation bg-indigo-700 select-none"
@@ -270,141 +285,147 @@ export function TimezoneTableGrid() {
               onPointerDown={startResizeEnd}
               aria-label="Resize selection end"
             />
-          </div>
+          </MotionDiv>
 
-          <div
-            className="grid w-max min-w-full items-stretch"
-            style={{
-              gridTemplateColumns: `${LABEL_WIDTH}px repeat(${SLOT_MARKERS.length}, ${CELL_WIDTH}px)`,
-            }}
-          >
-            {sortedZones.map((zone) => {
-              const meta = getZoneMeta(zone)
-              const isHome = zone === search.home
-              const deltaHours = zoneDeltaHours(search.home, zone, offsetSampleTimestamp)
-              const abbreviation = zoneAbbreviation(offsetSampleTimestamp, zone)
-              const offsetLabel = isHome ? '0' : addLeadingSign(deltaHours)
+          <LayoutGroup>
+            <AnimatePresence initial={false} mode="popLayout">
+              {sortedZones.map((zone) => {
+                const meta = getZoneMeta(zone)
+                const isHome = zone === search.home
+                const deltaHours = zoneDeltaHours(search.home, zone, offsetSampleTimestamp)
+                const abbreviation = zoneAbbreviation(offsetSampleTimestamp, zone)
+                const offsetLabel = isHome ? '0' : addLeadingSign(deltaHours)
 
-              return (
-                <Fragment key={zone}>
-                  <div
-                    className={cn(
-                      'sticky left-0 z-30 flex items-center justify-between gap-2 border-r border-b border-slate-200 px-2.5 py-2',
-                      isHome ? 'bg-indigo-50' : 'bg-white',
-                    )}
+                return (
+                  <MotionDiv
+                    key={zone}
+                    layout={!prefersReducedMotion}
+                    className="grid w-max min-w-full items-stretch"
+                    style={{ gridTemplateColumns: zoneRowColumns }}
+                    initial={{ opacity: 0, y: -12 }}
+                    animate={{ opacity: [0, 1], y: [-12, 0] }}
+                    exit={{ opacity: 0 }}
+                    transition={{ type: 'tween', duration, ease: 'easeOut' }}
                   >
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="block truncate text-[12px] leading-none font-semibold text-slate-800">
-                          {meta.city}
-                        </span>
-                        {isHome && (
-                          <span className="rounded-md bg-indigo-100 px-2 py-1 text-[11px] font-medium text-indigo-800">
-                            Home
+                    <div
+                      className={cn(
+                        'sticky left-0 z-30 flex items-center justify-between gap-2 border-r border-b border-slate-200 px-2.5 py-2',
+                        isHome ? 'bg-indigo-50' : 'bg-white',
+                      )}
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="block truncate text-[12px] leading-none font-semibold text-slate-800">
+                            {meta.city}
                           </span>
-                        )}
-                      </div>
-                      <span className="mt-1 block text-[11px] text-slate-500">
-                        {abbreviation ? `${abbreviation} ` : ''}
-                        {offsetLabel}
-                      </span>
-                      <span className="block text-[11px] text-slate-500">
-                        {new Intl.DateTimeFormat('en-US', {
-                          hour: 'numeric',
-                          minute: '2-digit',
-                          hour12: search.hourFormat !== '24',
-                          timeZone: zone,
-                        }).format(new Date(nowTimestamp))}
-                      </span>
-                    </div>
-                    {!isHome && (
-                      <div className="flex shrink-0 flex-col gap-1">
-                        <button
-                          className={rowActionClassName}
-                          type="button"
-                          onClick={() => setHome(zone)}
-                        >
-                          Set home
-                        </button>
-                        <button
-                          className={cn(
-                            rowActionClassName,
-                            'disabled:pointer-events-none disabled:opacity-40',
+                          {isHome && (
+                            <span className="rounded-md bg-indigo-100 px-2 py-1 text-[11px] font-medium text-indigo-800">
+                              Home
+                            </span>
                           )}
-                          type="button"
-                          disabled={search.zones.length <= 1}
-                          onClick={() => removeZone(zone)}
+                        </div>
+                        <span className="mt-1 block text-[11px] text-slate-500">
+                          {abbreviation ? `${abbreviation} ` : ''}
+                          {offsetLabel}
+                        </span>
+                        <span className="block text-[11px] text-slate-500">
+                          {new Intl.DateTimeFormat('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: search.hourFormat !== '24',
+                            timeZone: zone,
+                          }).format(new Date(nowTimestamp))}
+                        </span>
+                      </div>
+                      {!isHome && (
+                        <div className="flex shrink-0 flex-col gap-1">
+                          <button
+                            className={rowActionClassName}
+                            type="button"
+                            onClick={() => setHome(zone)}
+                          >
+                            Set home
+                          </button>
+                          <button
+                            className={cn(
+                              rowActionClassName,
+                              'disabled:pointer-events-none disabled:opacity-40',
+                            )}
+                            type="button"
+                            disabled={search.zones.length <= 1}
+                            onClick={() => removeZone(zone)}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {SLOT_MARKERS.map((minute) => {
+                      const timestamp = toTimestampFromHome(search.date, search.home, minute)
+                      const selected = minute >= timelineStart && minute < timelineEnd
+                      const localHour = localHourForClass(timestamp, zone)
+                      const local = localHourParts(timestamp, zone)
+                      const currentDate = localDateParts(timestamp, zone)
+                      const previousDate =
+                        minute > 0
+                          ? localDateParts(
+                              toTimestampFromHome(search.date, search.home, minute - SLOT_STEP),
+                              zone,
+                            )
+                          : null
+                      const isBoundary =
+                        minute === 0 ||
+                        !previousDate ||
+                        `${previousDate.month}-${previousDate.day}` !==
+                          `${currentDate.month}-${currentDate.day}`
+                      const todClass = todClassForHour(localHour)
+                      const isWeekend = isWeekendInZone(timestamp, zone)
+                      const toneClass = tickToneClass(todClass, isWeekend)
+                      const isCurrentHour =
+                        isToday && nowMinute >= minute && nowMinute < minute + SLOT_STEP
+
+                      return (
+                        <div
+                          className={cn(
+                            'grid min-h-[34px] place-items-center border-r border-b border-slate-100 py-0.5 text-center',
+                            toneClass,
+                            selected && '!bg-blue-100',
+                            isCurrentHour &&
+                              'font-semibold text-indigo-800 ring-1 ring-indigo-300 ring-inset',
+                          )}
+                          key={`${zone}-${minute}`}
                         >
-                          Remove
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {SLOT_MARKERS.map((minute) => {
-                    const timestamp = toTimestampFromHome(search.date, search.home, minute)
-                    const selected = minute >= timelineStart && minute < timelineEnd
-                    const localHour = localHourForClass(timestamp, zone)
-                    const local = localHourParts(timestamp, zone)
-                    const currentDate = localDateParts(timestamp, zone)
-                    const previousDate =
-                      minute > 0
-                        ? localDateParts(
-                            toTimestampFromHome(search.date, search.home, minute - SLOT_STEP),
-                            zone,
-                          )
-                        : null
-                    const isBoundary =
-                      minute === 0 ||
-                      !previousDate ||
-                      `${previousDate.month}-${previousDate.day}` !==
-                        `${currentDate.month}-${currentDate.day}`
-                    const todClass = todClassForHour(localHour)
-                    const isWeekend = isWeekendInZone(timestamp, zone)
-                    const toneClass = tickToneClass(todClass, isWeekend)
-                    const isCurrentHour =
-                      isToday && nowMinute >= minute && nowMinute < minute + SLOT_STEP
-
-                    return (
-                      <div
-                        className={cn(
-                          'grid min-h-[34px] place-items-center border-r border-b border-slate-100 py-0.5 text-center',
-                          toneClass,
-                          selected && '!bg-blue-100',
-                          isCurrentHour &&
-                            'font-semibold text-indigo-800 ring-1 ring-indigo-300 ring-inset',
-                        )}
-                        key={`${zone}-${minute}`}
-                      >
-                        {isBoundary ? (
-                          <>
-                            <span className="text-[10px] leading-none text-slate-600">
-                              {currentDate.weekday}
-                            </span>
-                            <span className="text-[11px] leading-none font-semibold text-slate-700">
-                              {currentDate.month}
-                            </span>
-                            <span className="text-[11px] leading-none text-slate-700">
-                              {currentDate.day}
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="text-[13px] leading-none font-bold text-slate-800">
-                              {local.hour}
-                            </span>
-                            <span className="text-[10px] leading-none text-slate-500">
-                              {local.period}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    )
-                  })}
-                </Fragment>
-              )
-            })}
-          </div>
+                          {isBoundary ? (
+                            <>
+                              <span className="text-[10px] leading-none text-slate-600">
+                                {currentDate.weekday}
+                              </span>
+                              <span className="text-[11px] leading-none font-semibold text-slate-700">
+                                {currentDate.month}
+                              </span>
+                              <span className="text-[11px] leading-none text-slate-700">
+                                {currentDate.day}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-[13px] leading-none font-bold text-slate-800">
+                                {local.hour}
+                              </span>
+                              <span className="text-[10px] leading-none text-slate-500">
+                                {local.period}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </MotionDiv>
+                )
+              })}
+            </AnimatePresence>
+          </LayoutGroup>
         </div>
       </div>
     </section>

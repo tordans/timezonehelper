@@ -1,5 +1,8 @@
+import { AnimatePresence, LayoutGroup } from 'motion/react'
 import { useEffect, useState } from 'react'
+import { MotionButton, MotionLi, MotionSpan } from '@/components/shared/motion'
 import { useAppSearch, useSearchActions, useSortedZones } from '@/hooks/use-app-search'
+import { useUiMotion } from '@/hooks/use-ui-motion'
 import { formatMeetingCopy } from '@/lib/meeting-copy'
 import type { HourFormat } from '@/lib/time'
 import {
@@ -27,6 +30,7 @@ export function ControlsCard() {
   const sortedZones = useSortedZones()
   const { updateSearchPatch } = useSearchActions()
   const [copied, setCopied] = useState(false)
+  const { duration, prefersReducedMotion } = useUiMotion()
 
   const startMinute = parseMinute(search.start)
   const endMinute = parseMinute(search.end)
@@ -129,35 +133,62 @@ export function ControlsCard() {
           <span className="text-sm text-slate-600">Duration {durationLabel}</span>
         </div>
 
-        <button className={controlButtonClassName} type="button" onClick={() => void copyTimes()}>
-          {copied ? 'Copied' : 'Copy times'}
-        </button>
+        <MotionButton
+          className={controlButtonClassName}
+          type="button"
+          onClick={() => void copyTimes()}
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            <MotionSpan
+              key={copied ? 'copied' : 'copy'}
+              className="inline-block"
+              initial={{ opacity: 0, scale: copied ? 0.96 : 1 }}
+              animate={{ opacity: [0, 1], scale: copied ? [0.96, 1] : 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration }}
+            >
+              {copied ? 'Copied' : 'Copy times'}
+            </MotionSpan>
+          </AnimatePresence>
+        </MotionButton>
       </div>
 
       <p className="text-xs text-slate-500">Mixed uses each location’s usual 12/24 format.</p>
 
-      <ul className="grid gap-0.5 text-sm text-slate-700">
-        {sortedZones.map((zone) => {
-          const meta = getZoneMeta(zone)
-          const localStart = formatTimestampForZone(startTimestamp, zone, search.hourFormat)
-          const localEnd = formatTimestampForZone(endTimestamp, zone, search.hourFormat)
-          const abbreviation = zoneAbbreviation(startTimestamp, zone)
-          const isHome = zone === search.home
+      <LayoutGroup>
+        <ul className="grid gap-0.5 text-sm text-slate-700">
+          <AnimatePresence initial={false}>
+            {sortedZones.map((zone) => {
+              const meta = getZoneMeta(zone)
+              const localStart = formatTimestampForZone(startTimestamp, zone, search.hourFormat)
+              const localEnd = formatTimestampForZone(endTimestamp, zone, search.hourFormat)
+              const abbreviation = zoneAbbreviation(startTimestamp, zone)
+              const isHome = zone === search.home
 
-          return (
-            <li className="flex justify-between gap-4" key={zone}>
-              <span>
-                {meta.city}
-                {isHome ? ' (home)' : ''}
-              </span>
-              <span>
-                {localStart}–{localEnd}
-                {abbreviation ? ` ${abbreviation}` : ''}
-              </span>
-            </li>
-          )
-        })}
-      </ul>
+              return (
+                <MotionLi
+                  className="flex justify-between gap-4"
+                  key={zone}
+                  layout={prefersReducedMotion ? false : 'position'}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: [0, 1] }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration }}
+                >
+                  <span>
+                    {meta.city}
+                    {isHome ? ' (home)' : ''}
+                  </span>
+                  <span>
+                    {localStart}–{localEnd}
+                    {abbreviation ? ` ${abbreviation}` : ''}
+                  </span>
+                </MotionLi>
+              )
+            })}
+          </AnimatePresence>
+        </ul>
+      </LayoutGroup>
 
       <p className="text-xs text-slate-500">Hold Shift while dragging for 5-minute precision.</p>
     </section>

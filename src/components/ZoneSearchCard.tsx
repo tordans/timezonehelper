@@ -1,5 +1,8 @@
+import { AnimatePresence } from 'motion/react'
 import { useState, type KeyboardEvent } from 'react'
+import { MotionLi, MotionP, MotionUl } from '@/components/shared/motion'
 import { useAppSearch, useSearchActions } from '@/hooks/use-app-search'
+import { useUiMotion } from '@/hooks/use-ui-motion'
 import { cn } from '@/lib/cn'
 import { useTimezoneSearch } from '@/lib/timezone-search'
 import { useSearchQuery, useUiActions } from '@/state/ui-store'
@@ -16,6 +19,7 @@ export function ZoneSearchCard() {
   const search = useAppSearch()
   const { addZone } = useSearchActions()
   const [highlightedIndex, setHighlightedIndex] = useState(0)
+  const { duration, prefersReducedMotion } = useUiMotion()
   const trimmedQuery = query.trim()
   const showHint = trimmedQuery.length === 1
   const showResults = trimmedQuery.length >= 2
@@ -99,42 +103,82 @@ export function ZoneSearchCard() {
         />
       </label>
 
-      {showHint && <p className="mt-3 text-sm text-slate-500">Type at least 2 characters</p>}
-
-      {showResults && (
-        <ul className="mt-3 grid max-h-64 gap-1.5 overflow-auto" role="listbox" id={LISTBOX_ID}>
-          {results.length === 0 && (
-            <li className="text-slate-500" role="presentation">
-              No matches found
-            </li>
-          )}
-          {results.map((result, index) => {
-            const alreadyAdded = addedZones.has(result.zone)
-            const isHighlighted = index === activeIndex
-
-            return (
-              <li key={result.zone} role="presentation">
-                <button
-                  className={cn(resultButtonClassName, isHighlighted && 'bg-indigo-50')}
-                  type="button"
-                  role="option"
-                  id={`zone-option-${index}`}
-                  aria-selected={isHighlighted}
-                  aria-disabled={alreadyAdded}
-                  disabled={alreadyAdded}
-                  onPointerMove={() => setHighlightedIndex(index)}
-                  onClick={() => addZoneAndResetQuery(result.zone)}
+      <AnimatePresence mode="wait">
+        {showHint ? (
+          <MotionP
+            key="hint"
+            className="mt-3 text-sm text-slate-500"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: [0, 1], y: [6, 0] }}
+            exit={{ opacity: 0 }}
+            transition={{ duration }}
+          >
+            Type at least 2 characters
+          </MotionP>
+        ) : showResults ? (
+          <MotionUl
+            key="results"
+            className="mt-3 grid max-h-64 gap-1.5 overflow-auto"
+            role="listbox"
+            id={LISTBOX_ID}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: [0, 1], y: [6, 0] }}
+            exit={{ opacity: 0 }}
+            transition={{ duration }}
+          >
+            <AnimatePresence>
+              {results.length === 0 && (
+                <MotionLi
+                  key="empty"
+                  className="text-slate-500"
+                  role="presentation"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: [0, 1], y: [6, 0] }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration }}
                 >
-                  <span>{result.label}</span>
-                  <span className="text-xs text-slate-500">
-                    {alreadyAdded ? 'Added' : result.zone}
-                  </span>
-                </button>
-              </li>
-            )
-          })}
-        </ul>
-      )}
+                  No matches found
+                </MotionLi>
+              )}
+              {results.map((result, index) => {
+                const alreadyAdded = addedZones.has(result.zone)
+                const isHighlighted = index === activeIndex
+
+                return (
+                  <MotionLi
+                    key={result.zone}
+                    role="presentation"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: [0, 1], y: [8, 0] }}
+                    exit={{ opacity: 0 }}
+                    transition={{
+                      duration,
+                      delay: prefersReducedMotion ? 0 : Math.min(index, 6) * 0.04,
+                    }}
+                  >
+                    <button
+                      className={cn(resultButtonClassName, isHighlighted && 'bg-indigo-50')}
+                      type="button"
+                      role="option"
+                      id={`zone-option-${index}`}
+                      aria-selected={isHighlighted}
+                      aria-disabled={alreadyAdded}
+                      disabled={alreadyAdded}
+                      onPointerMove={() => setHighlightedIndex(index)}
+                      onClick={() => addZoneAndResetQuery(result.zone)}
+                    >
+                      <span>{result.label}</span>
+                      <span className="text-xs text-slate-500">
+                        {alreadyAdded ? 'Added' : result.zone}
+                      </span>
+                    </button>
+                  </MotionLi>
+                )
+              })}
+            </AnimatePresence>
+          </MotionUl>
+        ) : null}
+      </AnimatePresence>
     </section>
   )
 }

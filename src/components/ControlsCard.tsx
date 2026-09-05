@@ -143,7 +143,7 @@ export function ControlsCard() {
               key={copied ? 'copied' : 'copy'}
               className="inline-block"
               initial={{ opacity: 0, scale: copied ? 0.96 : 1 }}
-              animate={{ opacity: [0, 1], scale: copied ? [0.96, 1] : 1 }}
+              animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration }}
             >
@@ -171,7 +171,7 @@ export function ControlsCard() {
                   key={zone}
                   layout={prefersReducedMotion ? false : 'position'}
                   initial={{ opacity: 0 }}
-                  animate={{ opacity: [0, 1] }}
+                  animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration }}
                 >

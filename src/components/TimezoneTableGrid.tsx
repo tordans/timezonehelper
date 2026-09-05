@@ -25,7 +25,6 @@ const MAX_MINUTE = 24 * 60 - 5
 const LABEL_WIDTH = 240
 const CELL_WIDTH = 54
 const SLOT_MARKERS = Array.from({ length: 24 }, (_, index) => index * SLOT_STEP)
-const NOW_LINE_OPACITY = [0.2, 1, 0.55, 1]
 
 const rowActionClassName =
   'min-h-11 cursor-pointer touch-manipulation select-none rounded border border-slate-300 bg-slate-50 px-3 text-[11px] active:bg-indigo-100 hover-fine:bg-indigo-50'
@@ -264,8 +263,8 @@ export function TimezoneTableGrid() {
               className="pointer-events-none absolute inset-y-0 z-10 w-0.5 bg-indigo-600"
               style={{ left: nowLeft }}
               initial={{ opacity: 0 }}
-              animate={{ opacity: NOW_LINE_OPACITY }}
-              transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.4 }}
               aria-hidden="true"
             />
           )}
@@ -303,7 +302,7 @@ export function TimezoneTableGrid() {
                     className="grid w-max min-w-full items-stretch"
                     style={{ gridTemplateColumns: zoneRowColumns }}
                     initial={{ opacity: 0, y: -12 }}
-                    animate={{ opacity: [0, 1], y: [-12, 0] }}
+                    animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
                     transition={{ type: 'tween', duration, ease: 'easeOut' }}
                   >

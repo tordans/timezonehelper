@@ -1,73 +1,41 @@
-# React + TypeScript + Vite
+# Timezone Helper
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A Vite + React 19 SPA for comparing timezones and dragging a meeting range. URL search params are the source of truth, so a link is a shareable view.
 
-Currently, two official plugins are available:
+This is a **Vite SPA** (not TanStack Start, not Next.js). App runtime is **Bun**. Node is only documented for tools that still spawn Node (Prisma, Playwright) — this repo does not use those.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Requirements
 
-## React Compiler
+- [Bun](https://bun.sh) ≥ 1.3.14
+- Optional: Node 24 LTS via `nvm use` (see `.nvmrc`) if you add Prisma or Playwright later
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Setup
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+bun install
+bun run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Scripts
 
-```js
-// eslint.config.js
-import reactX from "eslint-plugin-react-x"
-import reactDom from "eslint-plugin-react-dom"
+| Script                    | Role                                                     |
+| ------------------------- | -------------------------------------------------------- |
+| `dev`                     | Vite dev server (`bun --bun`)                            |
+| `build`                   | Production client build                                  |
+| `preview`                 | Preview the production build                             |
+| `type-check`              | `tsc --noEmit` (TypeScript 7)                            |
+| `lint` / `lint-check`     | Oxlint (mutating / CI read-only)                         |
+| `format` / `format-check` | oxfmt (mutating / CI read-only)                          |
+| `test-run`                | Vitest                                                   |
+| `knip` / `knip-warn`      | Unused files/deps (strict / advisory)                    |
+| `check`                   | Local verify: type-check, lint, format, tests, knip-warn |
+| `check-ci`                | Read-only CI verify                                      |
+| `check-pre-push`          | Mutating verify including strict knip                    |
 
-export default defineConfig([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs["recommended-typescript"],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Stack
+
+- React 19 + Vite 8, React Compiler via `@vitejs/plugin-react` (`compiler: true`)
+- TanStack Router search params (Zod 4) — not nuqs
+- TanStack Query for timezone search
+- Zustand for ephemeral UI (search box, drag, clock tick)
+- Tailwind CSS v4

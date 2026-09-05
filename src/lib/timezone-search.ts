@@ -1,58 +1,35 @@
-import { useQuery } from '@tanstack/react-query'
+import { getZoneSearchEntries } from '@/lib/zone-meta'
 
 export type ZoneResult = {
   zone: string
   label: string
 }
 
-async function searchTimezones(query: string): Promise<ZoneResult[]> {
-  const { getTimeZones } = await import('@vvo/tzdb')
-
-  const byZone = getTimeZones()
-    .map((zoneInfo) => {
-      const city = zoneInfo.mainCities[0] ?? zoneInfo.name
-      const abbreviation = zoneInfo.abbreviation ?? ''
-      const searchText = [
-        zoneInfo.name,
-        zoneInfo.alternativeName,
-        abbreviation,
-        zoneInfo.group.join(' '),
-        zoneInfo.mainCities.join(' '),
-        city,
-      ]
-        .join(' ')
-        .toLowerCase()
-
-      return {
-        zone: zoneInfo.name,
-        label: `${city} (${abbreviation}) - ${zoneInfo.name}`,
-        searchText,
-      }
-    })
-    .filter((entry) => entry.searchText.includes(query))
-    .slice(0, 20)
-    .map((entry) => ({ zone: entry.zone, label: entry.label }))
+function searchTimezones(query: string): ZoneResult[] {
+  const normalizedQuery = query.trim().toLowerCase()
+  if (normalizedQuery.length < 2) {
+    return []
+  }
 
   const merged = new Map<string, ZoneResult>()
 
-  for (const item of byZone) {
-    if (!merged.has(item.zone)) {
-      merged.set(item.zone, item)
+  for (const entry of getZoneSearchEntries()) {
+    if (!entry.searchText.includes(normalizedQuery)) {
+      continue
+    }
+
+    if (!merged.has(entry.zone)) {
+      merged.set(entry.zone, { zone: entry.zone, label: entry.label })
+    }
+
+    if (merged.size >= 20) {
+      break
     }
   }
 
-  return [...merged.values()].slice(0, 20)
+  return [...merged.values()]
 }
 
 export function useTimezoneSearch(query: string): ZoneResult[] {
-  const normalizedQuery = query.trim().toLowerCase()
-  const { data = [] } = useQuery({
-    queryKey: ['timezone-search', normalizedQuery],
-    queryFn: async () => searchTimezones(normalizedQuery),
-    staleTime: Number.POSITIVE_INFINITY,
-    gcTime: Number.POSITIVE_INFINITY,
-    enabled: normalizedQuery.length >= 2,
-  })
-
-  return data
+  return searchTimezones(query)
 }

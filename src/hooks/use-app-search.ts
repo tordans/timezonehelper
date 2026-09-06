@@ -23,10 +23,6 @@ export function useAppSearch() {
 
 export function useSortedZones() {
   const search = useAppSearch()
-  if (search.sort !== 'offset') {
-    return search.zones
-  }
-
   return sortZonesByOffset(search.zones, search.home, search.date)
 }
 

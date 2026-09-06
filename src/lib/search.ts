@@ -69,8 +69,7 @@ export const appSearchSchema = z
     const startMinute = parseMinute(value.start ?? IMPLICIT_RANGE_START)
     const endMinute = parseMinute(value.end ?? IMPLICIT_RANGE_END)
     const normalizedEnd = Math.max(endMinute, startMinute + 30)
-    const zones =
-      value.sort === 'offset' ? sortZonesByOffset(zonesOrDefault, home, date) : zonesOrDefault
+    const zones = sortZonesByOffset(zonesOrDefault, home, date)
 
     return {
       zones,

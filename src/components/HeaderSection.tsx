@@ -4,7 +4,7 @@ import { useIntroCalloutActions, useIntroCalloutDismissed } from '@/state/intro-
 
 const TITLE = 'Timezone Helper'
 const DESCRIPTION =
-  'Compare time zones at a glance and pick a meeting time. The URL is shareable, so anyone with the link sees the same zones, date, and range.'
+  'Compare time zones and pick a meeting time. The URL is shareable, so anyone with the link sees the same zones, date, and range.'
 
 export function HeaderSection() {
   const dismissed = useIntroCalloutDismissed()

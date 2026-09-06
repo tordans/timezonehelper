@@ -25,7 +25,7 @@ function writeDismissed() {
   try {
     window.localStorage.setItem(STORAGE_KEY, '1')
   } catch {
-    // Private mode or quota — keep the in-memory dismiss anyway.
+    // Private mode or quota. Keep the in-memory dismiss anyway.
   }
 }
 

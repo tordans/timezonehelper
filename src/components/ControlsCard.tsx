@@ -120,7 +120,7 @@ export function ControlsCard() {
               options={HOUR_FORMAT_OPTIONS}
               onChange={(hourFormat) => updateSearchPatch({ hourFormat })}
             />
-            <InfoHint label="Hour format">Mixed uses each location’s usual 12/24 format.</InfoHint>
+            <InfoHint label="Hour format">Mixed uses each location's usual 12/24 format.</InfoHint>
           </div>
         </Field>
       </div>

@@ -11,7 +11,7 @@ type SearchNavigateOptions = {
   resetScroll?: boolean
 }
 
-/** In-place search writes: replace history and keep scroll (filters, date, drag). */
+/** Filters, date, and drag use replace and keep scroll. */
 const filterSearchNavigateDefaults = {
   replace: true,
   resetScroll: false,

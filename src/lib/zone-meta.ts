@@ -40,7 +40,7 @@ function ensureCache() {
       city,
       abbreviation,
       countryCode: zoneInfo.countryCode,
-      label: `${city} (${abbreviation}) - ${zoneInfo.name}`,
+      label: `${city} (${abbreviation}), ${zoneInfo.name}`,
       searchText: [
         zoneInfo.name,
         zoneInfo.alternativeName,

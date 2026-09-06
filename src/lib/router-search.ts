@@ -4,7 +4,7 @@ import { rememberTimeRangeFromUrl, shouldSerializeTimeRange } from '@/state/ui-s
 const parseSearch = parseSearchWith(JSON.parse)
 const stringifySearchDefault = stringifySearchWith(JSON.stringify)
 
-/** Decode safe query-value characters after default stringify. */
+/** Undo JSON percent-encoding so commas and colons stay readable. */
 const makeSearchPretty = (searchString: string) =>
   searchString
     .replaceAll('%22', '"')

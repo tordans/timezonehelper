@@ -11,7 +11,7 @@ export const MotionUl = motion.ul
 
 const SECTION_STAGGER_SECONDS = 0.06
 
-export function sectionMountDelay(index: number): number {
+export function sectionMountDelay(index: number) {
   return index * SECTION_STAGGER_SECONDS
 }
 

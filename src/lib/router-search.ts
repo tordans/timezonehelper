@@ -20,7 +20,7 @@ const makeSearchPretty = (searchString: string) =>
     .replaceAll('%7D', '}')
     .replaceAll('%2F', '/')
 
-function compactZonesForUrl(search: Record<string, unknown>): Record<string, unknown> {
+function compactZonesForUrl(search: Record<string, unknown>) {
   if (!Array.isArray(search.zones)) {
     return search
   }
@@ -31,7 +31,7 @@ function compactZonesForUrl(search: Record<string, unknown>): Record<string, unk
   }
 }
 
-function omitUncommittedTimeRange(search: Record<string, unknown>): Record<string, unknown> {
+function omitUncommittedTimeRange(search: Record<string, unknown>) {
   if (shouldSerializeTimeRange()) {
     return search
   }

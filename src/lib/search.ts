@@ -85,6 +85,6 @@ export const appSearchSchema = z
 
 export type AppSearch = z.infer<typeof appSearchSchema>
 
-export function normalizeSearch(raw: unknown): AppSearch {
+export function normalizeSearch(raw: unknown) {
   return appSearchSchema.parse(raw)
 }

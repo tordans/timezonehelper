@@ -12,7 +12,18 @@ export type HourFormat = '12' | '24' | 'mx'
 const MINUTES_PER_DAY = 24 * 60
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 
-export function parseMinute(value: string): number {
+export function resolveHour12(hourFormat: HourFormat, zone: string) {
+  switch (hourFormat) {
+    case '12':
+      return true
+    case '24':
+      return false
+    case 'mx':
+      return zoneUsesHour12(zone)
+  }
+}
+
+export function parseMinute(value: string) {
   const [hText, mText] = value.split(':')
   const hour = Number.parseInt(hText ?? '', 10)
   const minute = Number.parseInt(mText ?? '', 10)
@@ -24,7 +35,7 @@ export function parseMinute(value: string): number {
   return clamp(hour * 60 + minute, 0, MINUTES_PER_DAY - 5)
 }
 
-export function formatMinute(value: number): string {
+export function formatMinute(value: number) {
   const safe = clamp(Math.floor(value), 0, MINUTES_PER_DAY - 1)
   const hours = Math.floor(safe / 60)
   const minutes = safe % 60
@@ -33,19 +44,15 @@ export function formatMinute(value: number): string {
   return `${hh}:${mm}`
 }
 
-export function clamp(value: number, min: number, max: number): number {
+export function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
 }
 
-export function roundToStep(value: number, step: number): number {
+export function roundToStep(value: number, step: number) {
   return Math.round(value / step) * step
 }
 
-export function toTimestampFromHome(
-  dateIso: string,
-  homeZone: string,
-  minuteOfDay: number,
-): number {
+export function toTimestampFromHome(dateIso: string, homeZone: string, minuteOfDay: number) {
   const [yearText, monthText, dayText] = dateIso.split('-')
   const year = Number.parseInt(yearText ?? '', 10)
   const month = Number.parseInt(monthText ?? '', 10)
@@ -58,12 +65,8 @@ export function toTimestampFromHome(
   return zonedDate.getTime()
 }
 
-export function formatTimestampForZone(
-  timestamp: number,
-  zone: string,
-  hourFormat: HourFormat,
-): string {
-  const hour12 = hourFormat === '24' ? false : hourFormat === '12' ? true : zoneUsesHour12(zone)
+export function formatTimestampForZone(timestamp: number, zone: string, hourFormat: HourFormat) {
+  const hour12 = resolveHour12(hourFormat, zone)
 
   return new Intl.DateTimeFormat(hour12 ? 'en-US' : 'en-GB', {
     hour: hour12 ? 'numeric' : '2-digit',
@@ -73,19 +76,19 @@ export function formatTimestampForZone(
   }).format(new Date(timestamp))
 }
 
-export function isWeekendInZone(timestamp: number, zone: string): boolean {
+export function isWeekendInZone(timestamp: number, zone: string) {
   const zoned = new TZDate(timestamp, zone)
   const day = zoned.getDay()
   return day === 0 || day === 6
 }
 
-export function zoneDeltaHours(baseZone: string, compareZone: string, timestamp: number): number {
+export function zoneDeltaHours(baseZone: string, compareZone: string, timestamp: number) {
   const baseOffset = tzOffset(baseZone, new Date(timestamp))
   const compareOffset = tzOffset(compareZone, new Date(timestamp))
   return (compareOffset - baseOffset) / 60
 }
 
-export function addLeadingSign(value: number): string {
+export function addLeadingSign(value: number) {
   if (value > 0) {
     return `+${value}`
   }
@@ -97,7 +100,7 @@ export function addLeadingSign(value: number): string {
   return '0'
 }
 
-export function zoneAbbreviation(timestamp: number, zone: string): string {
+export function zoneAbbreviation(timestamp: number, zone: string) {
   for (const locale of ['en-US', 'en-GB']) {
     const parts = new Intl.DateTimeFormat(locale, {
       timeZone: zone,
@@ -112,12 +115,12 @@ export function zoneAbbreviation(timestamp: number, zone: string): string {
   return getZoneMeta(zone).abbreviation
 }
 
-export function minuteOfDayInZone(timestamp: number, zone: string): number {
+export function minuteOfDayInZone(timestamp: number, zone: string) {
   const zoned = new TZDate(timestamp, zone)
   return zoned.getHours() * 60 + zoned.getMinutes()
 }
 
-export function formatDurationMinutes(minutes: number): string {
+export function formatDurationMinutes(minutes: number) {
   const safe = Math.max(0, Math.floor(minutes))
   const hours = Math.floor(safe / 60)
   const remainingMinutes = safe % 60
@@ -133,19 +136,19 @@ export function formatDurationMinutes(minutes: number): string {
   return `${hours}h ${remainingMinutes}m`
 }
 
-function formatIsoDateInZone(date: Date, zone: string): string {
+function formatIsoDateInZone(date: Date, zone: string) {
   const year = new Intl.DateTimeFormat('en-CA', { year: 'numeric', timeZone: zone }).format(date)
   const month = new Intl.DateTimeFormat('en-CA', { month: '2-digit', timeZone: zone }).format(date)
   const day = new Intl.DateTimeFormat('en-CA', { day: '2-digit', timeZone: zone }).format(date)
   return `${year}-${month}-${day}`
 }
 
-export function addDaysIso(dateIso: string, zone: string, delta: number): string {
+export function addDaysIso(dateIso: string, zone: string, delta: number) {
   const noon = toTimestampFromHome(dateIso, zone, 12 * 60)
   return formatIsoDateInZone(new Date(noon + delta * MS_PER_DAY), zone)
 }
 
-export function sortZonesByOffset(zones: string[], homeZone: string, dateIso: string): string[] {
+export function sortZonesByOffset(zones: string[], homeZone: string, dateIso: string) {
   const uniqueZones = Array.from(new Set(zones))
   const sampleTimestamp = toTimestampFromHome(dateIso, homeZone, 12 * 60)
 
@@ -164,11 +167,11 @@ export function sortZonesByOffset(zones: string[], homeZone: string, dateIso: st
   return [homeZone, ...withoutHome]
 }
 
-export function todayInZone(zone: string): string {
+export function todayInZone(zone: string) {
   return formatIsoDateInZone(new Date(), zone)
 }
 
-export function isoWeekMonday(dateIso: string): string {
+export function isoWeekMonday(dateIso: string) {
   const [yearText, monthText, dayText] = dateIso.split('-')
   const year = Number.parseInt(yearText ?? '', 10)
   const month = Number.parseInt(monthText ?? '', 10)
@@ -189,17 +192,13 @@ export function isoWeekMonday(dateIso: string): string {
   return `${mondayYear}-${mondayMonth}-${mondayDay}`
 }
 
-export function isCurrentWeekInZone(
-  timestamp: number,
-  zone: string,
-  now: Date = new Date(),
-): boolean {
+export function isCurrentWeekInZone(timestamp: number, zone: string, now: Date = new Date()) {
   const cellDate = formatIsoDateInZone(new Date(timestamp), zone)
   const today = formatIsoDateInZone(now, zone)
   return isoWeekMonday(cellDate) === isoWeekMonday(today)
 }
 
-function dateFnsLocaleForCountry(countryCode: string): Locale {
+function dateFnsLocaleForCountry(countryCode: string) {
   switch (countryCode) {
     case 'AT':
     case 'CH':
@@ -218,16 +217,11 @@ function dateFnsLocaleForCountry(countryCode: string): Locale {
   }
 }
 
-export type HourCellTooltip = {
-  headline: string
-  detail: string
-}
-
 export function formatHourCellTooltip(
   timestamp: number,
   homeZone: string,
   locale: Locale = dateFnsLocaleForCountry(getZoneMeta(homeZone).countryCode),
-): HourCellTooltip {
+) {
   const zoned = new TZDate(timestamp, homeZone)
   const weekPrefix = locale.code?.startsWith('de') ? 'KW' : 'Wk'
 
@@ -237,7 +231,7 @@ export function formatHourCellTooltip(
   }
 }
 
-function shortDateWithoutYear(zoned: TZDate, locale: Locale): string {
+function shortDateWithoutYear(zoned: TZDate, locale: Locale) {
   const code = locale.code ?? 'en-US'
 
   if (code.startsWith('de')) {
@@ -251,7 +245,7 @@ function shortDateWithoutYear(zoned: TZDate, locale: Locale): string {
   return format(zoned, 'M/d', { locale })
 }
 
-function shortHourInZone(zoned: TZDate, hour12: boolean, withMinutes: boolean): string {
+function shortHourInZone(zoned: TZDate, hour12: boolean, withMinutes: boolean) {
   if (hour12) {
     return withMinutes ? format(zoned, 'h:mm') : format(zoned, 'h')
   }
@@ -264,10 +258,10 @@ function shortRangeTime(
   endTimestamp: number,
   homeZone: string,
   hourFormat: HourFormat,
-): string {
+) {
   const start = new TZDate(startTimestamp, homeZone)
   const end = new TZDate(endTimestamp, homeZone)
-  const hour12 = hourFormat === '24' ? false : hourFormat === '12' ? true : zoneUsesHour12(homeZone)
+  const hour12 = resolveHour12(hourFormat, homeZone)
   const withMinutes = start.getMinutes() !== 0 || end.getMinutes() !== 0
   const startHour = shortHourInZone(start, hour12, withMinutes)
   const endHour = shortHourInZone(end, hour12, withMinutes)
@@ -292,7 +286,7 @@ export function formatSelectedRangeHeading(
   homeZone: string,
   hourFormat: HourFormat,
   durationLabel: string,
-): { title: string; meta: string } {
+) {
   const locale = dateFnsLocaleForCountry(getZoneMeta(homeZone).countryCode)
   const start = new TZDate(startTimestamp, homeZone)
   const weekPrefix = locale.code?.startsWith('de') ? 'KW' : 'Wk'
@@ -304,17 +298,13 @@ export function formatSelectedRangeHeading(
   }
 }
 
-export function formatCalendarDateLong(dateIso: string, homeZone: string): string {
+export function formatCalendarDateLong(dateIso: string, homeZone: string) {
   const timestamp = toTimestampFromHome(dateIso, homeZone, 12 * 60)
   const locale = dateFnsLocaleForCountry(getZoneMeta(homeZone).countryCode)
   return format(new TZDate(timestamp, homeZone), 'PPPP', { locale })
 }
 
-export function formatWeekday(
-  dateIso: string,
-  style: 'short' | 'long' = 'short',
-  locale?: string,
-): string {
+export function formatWeekday(dateIso: string, style: 'short' | 'long' = 'short', locale?: string) {
   const [yearText, monthText, dayText] = dateIso.split('-')
   const year = Number.parseInt(yearText ?? '', 10)
   const month = Number.parseInt(monthText ?? '', 10)

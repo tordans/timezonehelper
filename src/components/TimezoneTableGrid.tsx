@@ -22,13 +22,14 @@ import {
   isWeekendInZone,
   minuteOfDayInZone,
   parseMinute,
+  resolveHour12,
   roundToStep,
   todayInZone,
   toTimestampFromHome,
   zoneAbbreviation,
   zoneDeltaHours,
 } from '@/lib/time'
-import { getZoneMeta, zoneUsesHour12 } from '@/lib/zone-meta'
+import { getZoneMeta } from '@/lib/zone-meta'
 import { useDragState, useAutoAddedZone, useNowTimestamp, useUiActions } from '@/state/ui-store'
 
 const SLOT_STEP = 60
@@ -41,13 +42,13 @@ const VIEWPORT_MARGIN = 16
 const zoneActionButtonClassName =
   'size-6 p-0! sm:p-0! *:data-[slot=icon]:m-0 *:data-[slot=icon]:size-3.5 sm:*:data-[slot=icon]:my-0 sm:*:data-[slot=icon]:size-3.5'
 
-function minuteFromClientX(clientX: number, bounds: DOMRect): number {
+function minuteFromClientX(clientX: number, bounds: DOMRect) {
   const relativeX = clamp(clientX - bounds.left, 0, bounds.width)
   const progress = relativeX / (SLOT_MARKERS.length * CELL_WIDTH)
   return clamp(Math.round(progress * 24 * 60), 0, MAX_MINUTE)
 }
 
-function todClassForHour(hour: number): string {
+function todClassForHour(hour: number) {
   if (hour >= 6 && hour <= 7) {
     return 'tod_m'
   }
@@ -60,7 +61,7 @@ function todClassForHour(hour: number): string {
   return 'tod_n'
 }
 
-function tickToneClass(todClass: string, weekend: boolean, currentWeek: boolean): string {
+function tickToneClass(todClass: string, weekend: boolean, currentWeek: boolean) {
   if (currentWeek) {
     return weekend ? 'bg-fuchsia-100' : 'bg-fuchsia-50'
   }
@@ -140,10 +141,7 @@ export function TimezoneTableGrid() {
     formatDurationMinutes(timelineEnd - timelineStart),
   )
 
-  function localDateParts(
-    timestamp: number,
-    zone: string,
-  ): { weekday: string; month: string; day: string } {
+  function localDateParts(timestamp: number, zone: string) {
     const parts = new Intl.DateTimeFormat('en-US', {
       weekday: 'short',
       month: 'short',
@@ -157,9 +155,8 @@ export function TimezoneTableGrid() {
     return { weekday, month, day }
   }
 
-  function localHourParts(timestamp: number, zone: string): { hour: string; period: string } {
-    const hour12 =
-      search.hourFormat === '24' ? false : search.hourFormat === '12' ? true : zoneUsesHour12(zone)
+  function localHourParts(timestamp: number, zone: string) {
+    const hour12 = resolveHour12(search.hourFormat, zone)
 
     if (!hour12) {
       const hour = new Intl.DateTimeFormat('en-GB', {
@@ -182,7 +179,7 @@ export function TimezoneTableGrid() {
     return { hour, period }
   }
 
-  function localHourForClass(timestamp: number, zone: string): number {
+  function localHourForClass(timestamp: number, zone: string) {
     const hour = new Intl.DateTimeFormat('en-GB', {
       hour: '2-digit',
       hour12: false,
@@ -203,32 +200,37 @@ export function TimezoneTableGrid() {
     const roundedMinute = clamp(roundToStep(rawMinute, step), 0, 24 * 60 - step)
     const minimumSpan = step
 
-    if (dragState.mode === 'create') {
-      const start = Math.min(dragState.anchor, roundedMinute)
-      const end = Math.max(dragState.anchor, roundedMinute) + minimumSpan
-      updateSearchPatch({
-        start: formatMinute(start),
-        end: formatMinute(clamp(end, minimumSpan, MAX_MINUTE)),
-      })
-      return
+    switch (dragState.mode) {
+      case 'create': {
+        const start = Math.min(dragState.anchor, roundedMinute)
+        const end = Math.max(dragState.anchor, roundedMinute) + minimumSpan
+        updateSearchPatch({
+          start: formatMinute(start),
+          end: formatMinute(clamp(end, minimumSpan, MAX_MINUTE)),
+        })
+        return
+      }
+      case 'resize-start': {
+        const start = clamp(roundedMinute, 0, timelineEnd - minimumSpan)
+        updateSearchPatch({
+          start: formatMinute(start),
+        })
+        return
+      }
+      case 'resize-end': {
+        const end = clamp(roundedMinute + minimumSpan, timelineStart + minimumSpan, MAX_MINUTE)
+        updateSearchPatch({
+          end: formatMinute(end),
+        })
+      }
     }
-
-    if (dragState.mode === 'resize-start') {
-      const start = clamp(roundedMinute, 0, timelineEnd - minimumSpan)
-      updateSearchPatch({
-        start: formatMinute(start),
-      })
-      return
-    }
-
-    const end = clamp(roundedMinute + minimumSpan, timelineStart + minimumSpan, MAX_MINUTE)
-    updateSearchPatch({
-      end: formatMinute(end),
-    })
   }
 
   function startDrag(event: PointerEvent<HTMLDivElement>) {
-    const target = event.target as HTMLElement
+    const target = event.target
+    if (!(target instanceof HTMLElement)) {
+      return
+    }
     if (target.closest('button, a, input, [tabindex]:not([tabindex="-1"])')) {
       return
     }

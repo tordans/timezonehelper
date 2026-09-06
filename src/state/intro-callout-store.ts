@@ -16,7 +16,7 @@ type IntroCalloutStore = {
   }
 }
 
-function readDismissed(): boolean {
+function readDismissed() {
   if (typeof window === 'undefined') {
     return false
   }

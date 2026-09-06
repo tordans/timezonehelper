@@ -1,11 +1,11 @@
 import { getZoneSearchEntries } from '@/lib/zone-meta'
 
-export type ZoneResult = {
+type ZoneResult = {
   zone: string
   label: string
 }
 
-function searchTimezones(query: string): ZoneResult[] {
+function searchTimezones(query: string) {
   const normalizedQuery = query.trim().toLowerCase()
   if (normalizedQuery.length < 2) {
     return []
@@ -30,6 +30,6 @@ function searchTimezones(query: string): ZoneResult[] {
   return [...merged.values()]
 }
 
-export function useTimezoneSearch(query: string): ZoneResult[] {
+export function useTimezoneSearch(query: string) {
   return searchTimezones(query)
 }

@@ -1,6 +1,6 @@
 import { resolveKnownZone } from '@/lib/zone-meta'
 
-export function resolveBrowserTimeZone(): string | null {
+export function resolveBrowserTimeZone() {
   try {
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
     if (!timeZone) {

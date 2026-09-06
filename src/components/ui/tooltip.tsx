@@ -15,10 +15,14 @@ type TooltipProps = {
 
 export function Tooltip({ content, children, className }: TooltipProps) {
   const [open, setOpen] = useState(false)
-  const [position, setPosition] = useState({
+  const [position, setPosition] = useState<{
+    top: number
+    left: number
+    placement: TooltipPlacement
+  }>({
     top: 0,
     left: 0,
-    placement: 'bottom' as TooltipPlacement,
+    placement: 'bottom',
   })
   const showTimeoutRef = useRef<number | null>(null)
 

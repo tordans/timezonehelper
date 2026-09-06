@@ -1,196 +1,129 @@
-import { AnimatePresence, LayoutGroup } from 'motion/react'
-import { useEffect, useState } from 'react'
-import { MotionButton, MotionLi, MotionSpan } from '@/components/shared/motion'
-import { useAppSearch, useSearchActions, useSortedZones } from '@/hooks/use-app-search'
-import { useUiMotion } from '@/hooks/use-ui-motion'
-import { formatMeetingCopy } from '@/lib/meeting-copy'
+import * as Headless from '@headlessui/react'
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/16/solid'
+import { Button, TouchTarget } from '@/components/catalyst/button'
+import { Field, Fieldset } from '@/components/catalyst/fieldset'
+import { Input } from '@/components/catalyst/input'
+import {
+  ButtonGroup,
+  buttonGroupFrameClassName,
+  buttonGroupSegmentClassName,
+} from '@/components/ui/button-group'
+import { CurrentWeekMark, TodayLineMark } from '@/components/ui/grid-legend'
+import { InfoHint } from '@/components/ui/info-hint'
+import { Tooltip } from '@/components/ui/tooltip'
+import { useAppSearch, useSearchActions } from '@/hooks/use-app-search'
 import type { HourFormat } from '@/lib/time'
 import {
   addDaysIso,
-  formatDurationMinutes,
-  formatTimestampForZone,
-  parseMinute,
+  formatHourCellTooltip,
+  formatWeekday,
   todayInZone,
   toTimestampFromHome,
-  zoneAbbreviation,
 } from '@/lib/time'
-import { getZoneMeta } from '@/lib/zone-meta'
 
-const HOUR_FORMATS = ['12', '24', 'mx'] as const
-
-const controlButtonClassName =
-  'min-h-11 cursor-pointer touch-manipulation select-none rounded-md border border-slate-300 bg-slate-50 px-3 text-sm active:bg-indigo-100 hover-fine:bg-indigo-50 disabled:pointer-events-none disabled:opacity-40'
-
-function isHourFormat(value: string): value is HourFormat {
-  return (HOUR_FORMATS as readonly string[]).includes(value)
-}
+const HOUR_FORMAT_OPTIONS = [
+  { value: 'mx', label: 'Mixed' },
+  { value: '12', label: '12h' },
+  { value: '24', label: '24h' },
+] as const satisfies ReadonlyArray<{ value: HourFormat; label: string }>
 
 export function ControlsCard() {
   const search = useAppSearch()
-  const sortedZones = useSortedZones()
   const { updateSearchPatch } = useSearchActions()
-  const [copied, setCopied] = useState(false)
-  const { duration, prefersReducedMotion } = useUiMotion()
-
-  const startMinute = parseMinute(search.start)
-  const endMinute = parseMinute(search.end)
-  const startTimestamp = toTimestampFromHome(search.date, search.home, startMinute)
-  const endTimestamp = toTimestampFromHome(search.date, search.home, endMinute)
-  const durationLabel = formatDurationMinutes(endMinute - startMinute)
-  const copyText = formatMeetingCopy({
-    date: search.date,
-    start: search.start,
-    end: search.end,
-    home: search.home,
-    zones: sortedZones,
-    hourFormat: search.hourFormat,
-  })
-
-  useEffect(
-    function clearCopiedConfirmation() {
-      if (!copied) {
-        return
-      }
-
-      const timeoutId = window.setTimeout(() => {
-        setCopied(false)
-      }, 2000)
-
-      return function cancelCopiedConfirmation() {
-        window.clearTimeout(timeoutId)
-      }
-    },
-    [copied],
-  )
-
-  async function copyTimes() {
-    try {
-      await navigator.clipboard.writeText(copyText)
-      setCopied(true)
-    } catch {
-      setCopied(false)
-    }
-  }
+  const weekdayShort = formatWeekday(search.date, 'short')
+  const weekdayLong = formatWeekday(search.date, 'long')
+  const isToday = search.date === todayInZone(search.home)
+  const previousDateIso = addDaysIso(search.date, search.home, -1)
+  const nextDateIso = addDaysIso(search.date, search.home, 1)
+  const previousDateLabel = formatHourCellTooltip(
+    toTimestampFromHome(previousDateIso, search.home, 12 * 60),
+    search.home,
+  ).headline
+  const nextDateLabel = formatHourCellTooltip(
+    toTimestampFromHome(nextDateIso, search.home, 12 * 60),
+    search.home,
+  ).headline
 
   return (
-    <section className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="grid gap-1 text-sm font-medium text-slate-800">
-          Date
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              className={`${controlButtonClassName} min-w-11`}
+    <Fieldset>
+      <div className="flex flex-wrap items-end gap-4">
+        <Field>
+          <div className="flex flex-nowrap items-center gap-2">
+            <Button
+              outline
               type="button"
-              onClick={() => updateSearchPatch({ date: addDaysIso(search.date, search.home, -1) })}
-            >
-              Prev
-            </button>
-            <input
-              className="min-h-11 rounded-md border border-slate-300 bg-white px-2.5 text-base"
-              type="date"
-              value={search.date}
-              onChange={(event) => updateSearchPatch({ date: event.target.value })}
-            />
-            <button
-              className={controlButtonClassName}
-              type="button"
+              aria-label="Today"
+              aria-current={isToday ? 'date' : undefined}
+              disabled={isToday}
+              className={isToday ? 'cursor-help!' : undefined}
               onClick={() => updateSearchPatch({ date: todayInZone(search.home) })}
             >
-              Today
-            </button>
-            <button
-              className={`${controlButtonClassName} min-w-11`}
-              type="button"
-              onClick={() => updateSearchPatch({ date: addDaysIso(search.date, search.home, 1) })}
-            >
-              Next
-            </button>
-          </div>
-        </div>
-
-        <label className="grid gap-1 text-sm font-medium text-slate-800">
-          Hour format
-          <select
-            className="min-h-11 cursor-pointer rounded-md border border-slate-300 bg-white px-2.5 text-base"
-            value={search.hourFormat}
-            onChange={(event) => {
-              if (isHourFormat(event.target.value)) {
-                updateSearchPatch({ hourFormat: event.target.value })
-              }
-            }}
-          >
-            <option value="mx">Mixed (MX)</option>
-            <option value="12">12-hour</option>
-            <option value="24">24-hour</option>
-          </select>
-        </label>
-
-        <div className="ml-auto grid text-right">
-          <span className="text-sm text-slate-700">Selected range</span>
-          <strong className="text-base font-semibold text-slate-900">
-            {search.start}–{search.end}
-          </strong>
-          <span className="text-sm text-slate-600">Duration {durationLabel}</span>
-        </div>
-
-        <MotionButton
-          className={controlButtonClassName}
-          type="button"
-          onClick={() => void copyTimes()}
-        >
-          <AnimatePresence mode="wait" initial={false}>
-            <MotionSpan
-              key={copied ? 'copied' : 'copy'}
-              className="inline-block"
-              initial={{ opacity: 0, scale: copied ? 0.96 : 1 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration }}
-            >
-              {copied ? 'Copied' : 'Copy times'}
-            </MotionSpan>
-          </AnimatePresence>
-        </MotionButton>
-      </div>
-
-      <p className="text-xs text-slate-500">Mixed uses each location’s usual 12/24 format.</p>
-
-      <LayoutGroup>
-        <ul className="grid gap-0.5 text-sm text-slate-700">
-          <AnimatePresence initial={false}>
-            {sortedZones.map((zone) => {
-              const meta = getZoneMeta(zone)
-              const localStart = formatTimestampForZone(startTimestamp, zone, search.hourFormat)
-              const localEnd = formatTimestampForZone(endTimestamp, zone, search.hourFormat)
-              const abbreviation = zoneAbbreviation(startTimestamp, zone)
-              const isHome = zone === search.home
-
-              return (
-                <MotionLi
-                  className="flex justify-between gap-4"
-                  key={zone}
-                  layout={prefersReducedMotion ? false : 'position'}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration }}
+              <span className="inline-flex items-center gap-1.5">
+                Today
+                <TodayLineMark />
+                <span className="font-normal text-zinc-400">/</span>
+                Current Week
+                <CurrentWeekMark />
+              </span>
+            </Button>
+            <span className="relative w-fit">
+              <Input
+                className="w-fit! [&_input]:field-sizing-content [&_input]:w-auto [&_input]:pl-[calc(3ch+--spacing(6))] sm:[&_input]:pl-[calc(3ch+--spacing(5))]"
+                type="date"
+                aria-label={weekdayLong ? `Date, ${weekdayLong}` : 'Date'}
+                value={search.date}
+                onChange={(event) => updateSearchPatch({ date: event.target.value })}
+              />
+              {weekdayShort ? (
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute top-1/2 left-[calc(--spacing(3.5)-1px)] z-10 -translate-y-1/2 text-sm/6 font-medium text-zinc-500 sm:left-[calc(--spacing(3)-1px)]"
                 >
-                  <span>
-                    {meta.city}
-                    {isHome ? ' (home)' : ''}
-                  </span>
-                  <span>
-                    {localStart}–{localEnd}
-                    {abbreviation ? ` ${abbreviation}` : ''}
-                  </span>
-                </MotionLi>
-              )
-            })}
-          </AnimatePresence>
-        </ul>
-      </LayoutGroup>
+                  {weekdayShort}
+                </span>
+              ) : null}
+            </span>
+            <div className={buttonGroupFrameClassName()} role="group" aria-label="Change date">
+              <Tooltip content={previousDateLabel}>
+                <Headless.Button
+                  type="button"
+                  aria-label={`Previous day, ${previousDateLabel}`}
+                  className={buttonGroupSegmentClassName({ isFirst: true, isLast: false })}
+                  onClick={() => updateSearchPatch({ date: previousDateIso })}
+                >
+                  <TouchTarget>
+                    <ChevronLeftIcon className="size-4" aria-hidden="true" />
+                  </TouchTarget>
+                </Headless.Button>
+              </Tooltip>
+              <Tooltip className="-ml-px inline-flex" content={nextDateLabel}>
+                <Headless.Button
+                  type="button"
+                  aria-label={`Next day, ${nextDateLabel}`}
+                  className={buttonGroupSegmentClassName({ isFirst: false, isLast: true })}
+                  onClick={() => updateSearchPatch({ date: nextDateIso })}
+                >
+                  <TouchTarget>
+                    <ChevronRightIcon className="size-4" aria-hidden="true" />
+                  </TouchTarget>
+                </Headless.Button>
+              </Tooltip>
+            </div>
+          </div>
+        </Field>
 
-      <p className="text-xs text-slate-500">Hold Shift while dragging for 5-minute precision.</p>
-    </section>
+        <Field>
+          <div className="flex items-center gap-1">
+            <ButtonGroup
+              aria-label="Hour format"
+              value={search.hourFormat}
+              options={HOUR_FORMAT_OPTIONS}
+              onChange={(hourFormat) => updateSearchPatch({ hourFormat })}
+            />
+            <InfoHint label="Hour format">Mixed uses each location’s usual 12/24 format.</InfoHint>
+          </div>
+        </Field>
+      </div>
+    </Fieldset>
   )
 }

@@ -2,6 +2,7 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router'
 import type { AppSearch } from '@/lib/search'
 import { appSearchSchema } from '@/lib/search'
 import { sortZonesByOffset } from '@/lib/time'
+import { markTimeRangeCommitted, useAutoAddedZone, useUiActions } from '@/state/ui-store'
 
 const indexRouteApi = getRouteApi('/')
 
@@ -32,9 +33,15 @@ export function useSortedZones() {
 export function useSearchActions() {
   const navigate = useNavigate({ from: '/' })
   const search = useAppSearch()
+  const autoAddedZone = useAutoAddedZone()
+  const { dismissBrowserZoneAutoAdd } = useUiActions()
 
   function updateSearchPatch(patch: Partial<AppSearch>, options?: SearchNavigateOptions) {
     const { replace, resetScroll } = { ...filterSearchNavigateDefaults, ...options }
+
+    if (patch.start !== undefined || patch.end !== undefined) {
+      markTimeRangeCommitted()
+    }
 
     void navigate({
       search: (prev: AppSearch) => {
@@ -68,6 +75,10 @@ export function useSearchActions() {
   function removeZone(zone: string) {
     if (search.zones.length <= 1) {
       return
+    }
+
+    if (zone === autoAddedZone) {
+      dismissBrowserZoneAutoAdd()
     }
 
     const zones = search.zones.filter((entry) => entry !== zone)

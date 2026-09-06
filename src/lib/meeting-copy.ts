@@ -1,5 +1,6 @@
 import type { HourFormat } from '@/lib/time'
 import {
+  formatCalendarDateLong,
   formatTimestampForZone,
   parseMinute,
   toTimestampFromHome,
@@ -26,7 +27,7 @@ export function formatMeetingCopy({
 }: MeetingCopyInput): string {
   const startTimestamp = toTimestampFromHome(date, home, parseMinute(start))
   const endTimestamp = toTimestampFromHome(date, home, parseMinute(end))
-  const lines = [`Meeting · ${date} · ${start}–${end} home (${home})`]
+  const lines = [formatCalendarDateLong(date, home)]
 
   for (const zone of zones) {
     const meta = getZoneMeta(zone)
@@ -34,7 +35,7 @@ export function formatMeetingCopy({
     const localEnd = formatTimestampForZone(endTimestamp, zone, hourFormat)
     const abbreviation = zoneAbbreviation(startTimestamp, zone)
     const suffix = abbreviation ? ` ${abbreviation}` : ''
-    lines.push(`${meta.city}  ${localStart}–${localEnd}${suffix}`)
+    lines.push(`${meta.city}: ${localStart}–${localEnd}${suffix}`)
   }
 
   return lines.join('\n')

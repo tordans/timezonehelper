@@ -85,6 +85,11 @@ export function getZoneSearchEntries(): ZoneMeta[] {
   return searchEntries ?? []
 }
 
+export function resolveKnownZone(zone: string): string | null {
+  ensureCache()
+  return metaById.get(zone)?.zone ?? null
+}
+
 export function zoneUsesHour12(zone: string): boolean {
   const meta = getZoneMeta(zone)
   if (!meta.countryCode) {

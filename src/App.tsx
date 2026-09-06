@@ -1,27 +1,31 @@
 import { ControlsCard } from '@/components/ControlsCard'
 import { HeaderSection } from '@/components/HeaderSection'
+import { SelectedRangeCard } from '@/components/SelectedRangeCard'
 import { FadeInOnMount, sectionMountDelay } from '@/components/shared/motion'
 import { TimezoneTableGrid } from '@/components/TimezoneTableGrid'
-import { ZoneSearchCard } from '@/components/ZoneSearchCard'
+import { useBrowserHomeZone } from '@/hooks/use-browser-home-zone'
 import { useClockTick } from '@/hooks/use-clock-tick'
 
 function App() {
   useClockTick()
+  useBrowserHomeZone()
 
   return (
-    <main className="mx-auto grid min-h-svh max-w-[1240px] gap-4 bg-slate-50 p-4 text-slate-900">
-      <FadeInOnMount delay={sectionMountDelay(0)}>
-        <HeaderSection />
-      </FadeInOnMount>
-      <FadeInOnMount delay={sectionMountDelay(1)}>
-        <ControlsCard />
-      </FadeInOnMount>
-      <FadeInOnMount delay={sectionMountDelay(2)}>
-        <ZoneSearchCard />
-      </FadeInOnMount>
-      <FadeInOnMount delay={sectionMountDelay(3)}>
-        <TimezoneTableGrid />
-      </FadeInOnMount>
+    <main className="min-h-svh overflow-x-clip bg-zinc-100">
+      <div className="mx-auto grid w-full max-w-6xl min-w-0 gap-6 px-4 py-8 sm:px-6">
+        <FadeInOnMount delay={sectionMountDelay(0)}>
+          <HeaderSection />
+        </FadeInOnMount>
+        <FadeInOnMount delay={sectionMountDelay(1)}>
+          <ControlsCard />
+        </FadeInOnMount>
+        <FadeInOnMount delay={sectionMountDelay(2)}>
+          <TimezoneTableGrid />
+        </FadeInOnMount>
+        <FadeInOnMount delay={sectionMountDelay(3)}>
+          <SelectedRangeCard />
+        </FadeInOnMount>
+      </div>
     </main>
   )
 }

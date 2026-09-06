@@ -6,6 +6,10 @@ const DEFAULT_ZONES = ['America/New_York', 'Europe/London', 'Asia/Tokyo'] as con
 const DEFAULT_HOME = DEFAULT_ZONES[0]
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/
 
+/** Home-timeline range used until the URL (or the user) supplies a selection. */
+export const IMPLICIT_RANGE_START = '10:00'
+export const IMPLICIT_RANGE_END = '11:00'
+
 const commaSeparatedZonesSchema = z.preprocess(
   (input) => {
     if (input === undefined || input === null || input === '') {
@@ -62,8 +66,8 @@ export const appSearchSchema = z
         ? homeCandidate
         : (zonesOrDefault[0] ?? DEFAULT_HOME)
     const date = value.date && DATE_REGEX.test(value.date) ? value.date : todayInZone(home)
-    const startMinute = parseMinute(value.start ?? '09:00')
-    const endMinute = parseMinute(value.end ?? '10:00')
+    const startMinute = parseMinute(value.start ?? IMPLICIT_RANGE_START)
+    const endMinute = parseMinute(value.end ?? IMPLICIT_RANGE_END)
     const normalizedEnd = Math.max(endMinute, startMinute + 30)
     const zones =
       value.sort === 'offset' ? sortZonesByOffset(zonesOrDefault, home, date) : zonesOrDefault

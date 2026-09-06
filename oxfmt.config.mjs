@@ -31,5 +31,6 @@ export default defineConfig({
     '.tailwind-plus-catalyst-ui-library_copy_what_you_need/**',
     'dist/**',
     'helper/**',
+    'src/components/catalyst/**',
   ],
 })

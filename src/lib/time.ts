@@ -1,4 +1,10 @@
 import { TZDate, tzOffset } from '@date-fns/tz'
+import { format, getISOWeek, type Locale } from 'date-fns'
+import { de } from 'date-fns/locale/de'
+import { enGB } from 'date-fns/locale/en-GB'
+import { enUS } from 'date-fns/locale/en-US'
+import { fr } from 'date-fns/locale/fr'
+import { ja } from 'date-fns/locale/ja'
 import { getZoneMeta, zoneUsesHour12 } from '@/lib/zone-meta'
 
 export type HourFormat = '12' | '24' | 'mx'
@@ -160,4 +166,168 @@ export function sortZonesByOffset(zones: string[], homeZone: string, dateIso: st
 
 export function todayInZone(zone: string): string {
   return formatIsoDateInZone(new Date(), zone)
+}
+
+export function isoWeekMonday(dateIso: string): string {
+  const [yearText, monthText, dayText] = dateIso.split('-')
+  const year = Number.parseInt(yearText ?? '', 10)
+  const month = Number.parseInt(monthText ?? '', 10)
+  const day = Number.parseInt(dayText ?? '', 10)
+
+  if (Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
+    return ''
+  }
+
+  const utcNoon = Date.UTC(year, month - 1, day, 12)
+  const weekday = new Date(utcNoon).getUTCDay()
+  const isoDay = weekday === 0 ? 7 : weekday
+  const mondayNoon = utcNoon - (isoDay - 1) * MS_PER_DAY
+  const monday = new Date(mondayNoon)
+  const mondayYear = monday.getUTCFullYear()
+  const mondayMonth = String(monday.getUTCMonth() + 1).padStart(2, '0')
+  const mondayDay = String(monday.getUTCDate()).padStart(2, '0')
+  return `${mondayYear}-${mondayMonth}-${mondayDay}`
+}
+
+export function isCurrentWeekInZone(
+  timestamp: number,
+  zone: string,
+  now: Date = new Date(),
+): boolean {
+  const cellDate = formatIsoDateInZone(new Date(timestamp), zone)
+  const today = formatIsoDateInZone(now, zone)
+  return isoWeekMonday(cellDate) === isoWeekMonday(today)
+}
+
+function dateFnsLocaleForCountry(countryCode: string): Locale {
+  switch (countryCode) {
+    case 'AT':
+    case 'CH':
+    case 'DE':
+    case 'LI':
+      return de
+    case 'GB':
+    case 'IE':
+      return enGB
+    case 'FR':
+      return fr
+    case 'JP':
+      return ja
+    default:
+      return enUS
+  }
+}
+
+export type HourCellTooltip = {
+  headline: string
+  detail: string
+}
+
+export function formatHourCellTooltip(
+  timestamp: number,
+  homeZone: string,
+  locale: Locale = dateFnsLocaleForCountry(getZoneMeta(homeZone).countryCode),
+): HourCellTooltip {
+  const zoned = new TZDate(timestamp, homeZone)
+  const weekPrefix = locale.code?.startsWith('de') ? 'KW' : 'Wk'
+
+  return {
+    headline: format(zoned, 'EEEE d.M.yyyy', { locale }),
+    detail: `${format(zoned, 'MMMM', { locale })}, ${weekPrefix} ${getISOWeek(zoned)}`,
+  }
+}
+
+function shortDateWithoutYear(zoned: TZDate, locale: Locale): string {
+  const code = locale.code ?? 'en-US'
+
+  if (code.startsWith('de')) {
+    return format(zoned, 'd.M.', { locale })
+  }
+
+  if (code === 'en-GB' || code.startsWith('fr')) {
+    return format(zoned, 'd/M', { locale })
+  }
+
+  return format(zoned, 'M/d', { locale })
+}
+
+function shortHourInZone(zoned: TZDate, hour12: boolean, withMinutes: boolean): string {
+  if (hour12) {
+    return withMinutes ? format(zoned, 'h:mm') : format(zoned, 'h')
+  }
+
+  return withMinutes ? format(zoned, 'H:mm') : format(zoned, 'H')
+}
+
+function shortRangeTime(
+  startTimestamp: number,
+  endTimestamp: number,
+  homeZone: string,
+  hourFormat: HourFormat,
+): string {
+  const start = new TZDate(startTimestamp, homeZone)
+  const end = new TZDate(endTimestamp, homeZone)
+  const hour12 = hourFormat === '24' ? false : hourFormat === '12' ? true : zoneUsesHour12(homeZone)
+  const withMinutes = start.getMinutes() !== 0 || end.getMinutes() !== 0
+  const startHour = shortHourInZone(start, hour12, withMinutes)
+  const endHour = shortHourInZone(end, hour12, withMinutes)
+
+  if (!hour12) {
+    return `${startHour}–${endHour}`
+  }
+
+  const startPeriod = format(start, 'a')
+  const endPeriod = format(end, 'a')
+
+  if (startPeriod === endPeriod) {
+    return `${startHour}–${endHour} ${startPeriod}`
+  }
+
+  return `${startHour} ${startPeriod}–${endHour} ${endPeriod}`
+}
+
+export function formatSelectedRangeHeading(
+  startTimestamp: number,
+  endTimestamp: number,
+  homeZone: string,
+  hourFormat: HourFormat,
+  durationLabel: string,
+): { title: string; meta: string } {
+  const locale = dateFnsLocaleForCountry(getZoneMeta(homeZone).countryCode)
+  const start = new TZDate(startTimestamp, homeZone)
+  const weekPrefix = locale.code?.startsWith('de') ? 'KW' : 'Wk'
+  const time = shortRangeTime(startTimestamp, endTimestamp, homeZone, hourFormat)
+
+  return {
+    title: `${shortDateWithoutYear(start, locale)} · ${time}`,
+    meta: `${durationLabel} · ${weekPrefix} ${getISOWeek(start)} · ${format(start, 'MMMM yyyy', { locale })}`,
+  }
+}
+
+export function formatCalendarDateLong(dateIso: string, homeZone: string): string {
+  const timestamp = toTimestampFromHome(dateIso, homeZone, 12 * 60)
+  const locale = dateFnsLocaleForCountry(getZoneMeta(homeZone).countryCode)
+  return format(new TZDate(timestamp, homeZone), 'PPPP', { locale })
+}
+
+export function formatWeekday(
+  dateIso: string,
+  style: 'short' | 'long' = 'short',
+  locale?: string,
+): string {
+  const [yearText, monthText, dayText] = dateIso.split('-')
+  const year = Number.parseInt(yearText ?? '', 10)
+  const month = Number.parseInt(monthText ?? '', 10)
+  const day = Number.parseInt(dayText ?? '', 10)
+
+  if (Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
+    return ''
+  }
+
+  const formatted = new Intl.DateTimeFormat(locale, {
+    weekday: style,
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(year, month - 1, day, 12)))
+
+  return style === 'short' ? formatted.replace(/\.+$/u, '') : formatted
 }

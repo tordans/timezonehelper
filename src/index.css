@@ -5,6 +5,7 @@
 
 @theme {
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-sans--font-feature-settings: 'cv11';
 }
 
 @custom-variant hover-fine {
@@ -15,6 +16,40 @@
   }
 }
 
+@custom-variant fine-pointer {
+  @media (hover: hover) and (pointer: fine) {
+    @slot;
+  }
+}
+
+html {
+  overflow-x: clip;
+  color-scheme: light;
+}
+
+@layer base {
+  button:not(:disabled),
+  [type='button']:not(:disabled),
+  [type='submit']:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  [role='radio']:not([aria-disabled='true']),
+  [role='option']:not(:disabled):not([aria-disabled='true']),
+  [role='combobox']:not(:disabled),
+  a[href],
+  input:not(:disabled),
+  select:not(:disabled),
+  textarea:not(:disabled),
+  label {
+    cursor: pointer;
+  }
+
+  :disabled,
+  [aria-disabled='true'] {
+    cursor: default;
+  }
+}
+
 body {
   font-family: var(--font-sans);
+  @apply bg-zinc-100 text-zinc-950 antialiased scheme-light;
 }

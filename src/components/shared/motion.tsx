@@ -4,10 +4,8 @@ import { motion, useReducedMotion } from 'motion/react'
 import type { ReactNode } from 'react'
 
 // Stable aliases so render does not touch the Motion proxy (React Compiler).
-export const MotionButton = motion.button
 export const MotionDiv = motion.div
 export const MotionLi = motion.li
-export const MotionP = motion.p
 export const MotionSpan = motion.span
 export const MotionUl = motion.ul
 
@@ -27,6 +25,7 @@ export function FadeInOnMount({ children, delay }: FadeInOnMountProps) {
 
   return (
     <MotionDiv
+      className="w-full min-w-0"
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{

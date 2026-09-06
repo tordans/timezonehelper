@@ -1,4 +1,5 @@
 import { parseSearchWith, stringifySearchWith } from '@tanstack/react-router'
+import { rememberTimeRangeFromUrl, shouldSerializeTimeRange } from '@/state/ui-store'
 
 const parseSearch = parseSearchWith(JSON.parse)
 const stringifySearchDefault = stringifySearchWith(JSON.stringify)
@@ -30,8 +31,23 @@ function compactZonesForUrl(search: Record<string, unknown>): Record<string, unk
   }
 }
 
+function omitUncommittedTimeRange(search: Record<string, unknown>): Record<string, unknown> {
+  if (shouldSerializeTimeRange()) {
+    return search
+  }
+
+  const next = { ...search }
+  delete next.start
+  delete next.end
+  return next
+}
+
 export const routerSearch = {
-  parse: parseSearch,
+  parse: (searchString: string) => {
+    const parsed = parseSearch(searchString)
+    rememberTimeRangeFromUrl(parsed)
+    return parsed
+  },
   stringify: (search: Record<string, unknown>) =>
-    makeSearchPretty(stringifySearchDefault(compactZonesForUrl(search))),
+    makeSearchPretty(stringifySearchDefault(compactZonesForUrl(omitUncommittedTimeRange(search)))),
 }

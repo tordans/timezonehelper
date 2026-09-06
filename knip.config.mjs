@@ -15,6 +15,7 @@ export default {
     '.cursor/**',
     '.tailwind-plus/**',
     '.tailwind-plus-catalyst-ui-library_copy_what_you_need/**',
+    'src/components/catalyst/**',
   ],
   ignoreBinaries: ['code', 'gh', 'rg'],
   rules: {

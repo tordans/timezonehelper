@@ -6,7 +6,8 @@ import {
   redirect,
 } from '@tanstack/react-router'
 import App from '@/App'
-import { TanStackAppDevtools } from '@/components/shared/devtools/TanStackAppDevtools'
+import { Heading } from '@/components/catalyst/heading'
+import { Text } from '@/components/catalyst/text'
 import { routerSearch } from '@/lib/router-search'
 import { appSearchSchema } from '@/lib/search'
 
@@ -22,20 +23,13 @@ const rootRoute = createRootRoute({
   },
   errorComponent: function RootError() {
     return (
-      <main className="mx-auto grid min-h-svh max-w-[40rem] place-content-center gap-2 p-6 text-slate-900">
-        <h1 className="text-xl font-semibold">Something went wrong</h1>
-        <p className="text-sm text-slate-600">Reload the page to try again.</p>
+      <main className="mx-auto grid min-h-svh max-w-[40rem] place-content-center gap-2 bg-zinc-100 p-6">
+        <Heading>Something went wrong</Heading>
+        <Text>Reload the page to try again.</Text>
       </main>
     )
   },
-  component: function RootLayout() {
-    return (
-      <>
-        <Outlet />
-        <TanStackAppDevtools />
-      </>
-    )
-  },
+  component: Outlet,
 })
 
 export const Route = createRoute({

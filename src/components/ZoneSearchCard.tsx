@@ -1,6 +1,8 @@
+import { MagnifyingGlassIcon } from '@heroicons/react/16/solid'
 import { AnimatePresence } from 'motion/react'
-import { useState, type KeyboardEvent } from 'react'
-import { MotionLi, MotionP, MotionUl } from '@/components/shared/motion'
+import { useRef, useState, type KeyboardEvent } from 'react'
+import { Input, InputGroup } from '@/components/catalyst/input'
+import { MotionDiv, MotionLi, MotionUl } from '@/components/shared/motion'
 import { useAppSearch, useSearchActions } from '@/hooks/use-app-search'
 import { useUiMotion } from '@/hooks/use-ui-motion'
 import { cn } from '@/lib/cn'
@@ -10,15 +12,16 @@ import { useSearchQuery, useUiActions } from '@/state/ui-store'
 const LISTBOX_ID = 'zone-search-results'
 
 const resultButtonClassName =
-  'flex min-h-11 w-full cursor-pointer touch-manipulation select-none items-center justify-between gap-4 rounded-md border border-slate-200 bg-slate-50 px-3 text-left text-sm active:bg-indigo-100 hover-fine:bg-indigo-50 disabled:pointer-events-none disabled:opacity-50'
+  'group/option grid w-full cursor-pointer grid-cols-[1fr_auto] items-baseline gap-x-2 rounded-lg py-2.5 pr-2 pl-3.5 text-left text-base/6 touch-manipulation select-none disabled:cursor-default sm:py-1.5 sm:pr-2 sm:pl-3 sm:text-sm/6'
 
-export function ZoneSearchCard() {
+export function ZoneSearchField() {
   const query = useSearchQuery()
   const { setQuery } = useUiActions()
   const results = useTimezoneSearch(query)
   const search = useAppSearch()
   const { addZone } = useSearchActions()
   const [highlightedIndex, setHighlightedIndex] = useState(0)
+  const inputRef = useRef<HTMLInputElement>(null)
   const { duration, prefersReducedMotion } = useUiMotion()
   const trimmedQuery = query.trim()
   const showHint = trimmedQuery.length === 1
@@ -84,41 +87,74 @@ export function ZoneSearchCard() {
   }
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <label className="grid w-full gap-1 text-sm font-medium text-slate-800">
-        Add timezone
-        <input
-          className="w-full rounded-md border border-slate-300 bg-white px-2.5 py-2 text-base"
+    <div className="relative">
+      <InputGroup>
+        <MagnifyingGlassIcon data-slot="icon" />
+        <Input
+          ref={inputRef}
           type="text"
           role="combobox"
           value={query}
-          placeholder="City, abbreviation, or IANA zone"
+          placeholder="Add timezone"
           autoComplete="off"
+          aria-label="Add timezone"
           aria-autocomplete="list"
           aria-expanded={listOpen}
           aria-controls={showResults ? LISTBOX_ID : undefined}
           aria-activedescendant={activeOptionId}
+          className={
+            query
+              ? '[&_input]:pr-[calc(--spacing(10)-1px)] sm:[&_input]:pr-[calc(--spacing(9)-1px)]'
+              : undefined
+          }
           onChange={(event) => handleQueryChange(event.target.value)}
           onKeyDown={handleKeyDown}
-        />
-      </label>
+        >
+          {query ? (
+            <button
+              type="button"
+              aria-label="Clear search"
+              className="group absolute inset-y-0 right-0 flex cursor-pointer items-center rounded-r-lg px-2 focus:outline-hidden"
+              onClick={() => {
+                setQuery('')
+                setHighlightedIndex(0)
+                inputRef.current?.focus()
+              }}
+            >
+              <svg
+                className="size-5 stroke-zinc-500 group-hover:stroke-zinc-700 sm:size-4"
+                viewBox="0 0 16 16"
+                aria-hidden="true"
+                fill="none"
+              >
+                <path
+                  d="M5 5L11 11M11 5L5 11"
+                  strokeWidth={1.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          ) : null}
+        </Input>
+      </InputGroup>
 
       <AnimatePresence mode="wait">
         {showHint ? (
-          <MotionP
+          <MotionDiv
             key="hint"
-            className="mt-3 text-sm text-slate-500"
+            className="absolute top-full left-0 z-50 mt-1 w-max max-w-80 rounded-lg bg-white px-3 py-2 text-xs/5 text-zinc-500 shadow-lg ring-1 ring-zinc-950/10"
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration }}
           >
             Type at least 2 characters
-          </MotionP>
+          </MotionDiv>
         ) : showResults ? (
           <MotionUl
             key="results"
-            className="mt-3 grid max-h-64 gap-1.5 overflow-auto"
+            className="absolute top-full left-0 z-50 mt-1 max-h-64 w-[32rem] max-w-[min(32rem,calc(100vw-3rem))] overflow-y-auto overscroll-contain rounded-xl bg-white p-1 shadow-lg ring-1 ring-zinc-950/10"
             role="listbox"
             id={LISTBOX_ID}
             initial={{ opacity: 0, y: 6 }}
@@ -130,7 +166,7 @@ export function ZoneSearchCard() {
               {results.length === 0 && (
                 <MotionLi
                   key="empty"
-                  className="text-slate-500"
+                  className="px-3.5 py-2.5 text-sm/6 text-zinc-500"
                   role="presentation"
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -157,7 +193,13 @@ export function ZoneSearchCard() {
                     }}
                   >
                     <button
-                      className={cn(resultButtonClassName, isHighlighted && 'bg-indigo-50')}
+                      className={cn(
+                        resultButtonClassName,
+                        isHighlighted
+                          ? 'bg-blue-500 text-white'
+                          : 'text-zinc-950 active:bg-zinc-950/5',
+                        alreadyAdded && 'opacity-50',
+                      )}
                       type="button"
                       role="option"
                       id={`zone-option-${index}`}
@@ -167,9 +209,11 @@ export function ZoneSearchCard() {
                       onPointerMove={() => setHighlightedIndex(index)}
                       onClick={() => addZoneAndResetQuery(result.zone)}
                     >
-                      <span>{result.label}</span>
-                      <span className="text-xs text-slate-500">
-                        {alreadyAdded ? 'Added' : result.zone}
+                      <span className="min-w-0 truncate">{result.label}</span>
+                      <span
+                        className={cn('text-xs', isHighlighted ? 'text-white/80' : 'text-zinc-500')}
+                      >
+                        {alreadyAdded ? 'In list' : result.zone}
                       </span>
                     </button>
                   </MotionLi>
@@ -179,6 +223,6 @@ export function ZoneSearchCard() {
           </MotionUl>
         ) : null}
       </AnimatePresence>
-    </section>
+    </div>
   )
 }

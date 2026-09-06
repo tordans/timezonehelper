@@ -1,6 +1,13 @@
+import { z } from 'zod'
 import { create } from 'zustand'
 
 const STORAGE_KEY = 'timezonehelper-intro-callout'
+
+const introCalloutPersistSchema = z.object({
+  state: z.object({
+    dismissed: z.boolean(),
+  }),
+})
 
 type IntroCalloutStore = {
   dismissed: boolean
@@ -24,8 +31,8 @@ function readDismissed(): boolean {
       return false
     }
 
-    const parsed = JSON.parse(raw) as { state?: { dismissed?: boolean } }
-    return parsed.state?.dismissed === true
+    const parsed = introCalloutPersistSchema.safeParse(JSON.parse(raw))
+    return parsed.success && parsed.data.state.dismissed
   } catch {
     return false
   }

@@ -1,4 +1,10 @@
+import { z } from 'zod'
 import { create } from 'zustand'
+
+const urlTimeRangeSchema = z.object({
+  start: z.string().optional(),
+  end: z.string().optional(),
+})
 
 type DragMode = 'create' | 'resize-start' | 'resize-end'
 
@@ -69,11 +75,12 @@ export function markTimeRangeCommitted() {
 }
 
 export function rememberTimeRangeFromUrl(search: unknown) {
-  if (!search || typeof search !== 'object' || Array.isArray(search)) {
+  const parsed = urlTimeRangeSchema.safeParse(search)
+  if (!parsed.success) {
     return
   }
 
-  if ('start' in search || 'end' in search) {
+  if (parsed.data.start !== undefined || parsed.data.end !== undefined) {
     markTimeRangeCommitted()
   }
 }

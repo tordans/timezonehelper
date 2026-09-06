@@ -1,6 +1,6 @@
 import { getTimeZones } from '@vvo/tzdb'
 
-export type ZoneMeta = {
+type ZoneMeta = {
   zone: string
   city: string
   abbreviation: string
@@ -12,11 +12,11 @@ export type ZoneMeta = {
 const metaById = new Map<string, ZoneMeta>()
 let searchEntries: ZoneMeta[] | null = null
 
-function lastIanaSegment(iana: string): string {
+function lastIanaSegment(iana: string) {
   return iana.split('/').at(-1)?.replaceAll('_', ' ') ?? iana
 }
 
-function cityFromZoneInfo(mainCities: string[], iana: string): string {
+function cityFromZoneInfo(mainCities: string[], iana: string) {
   const namedCity = mainCities[0]?.trim()
   if (namedCity) {
     return namedCity
@@ -66,7 +66,7 @@ function ensureCache() {
   searchEntries = entries
 }
 
-export function getZoneMeta(zone: string): ZoneMeta {
+export function getZoneMeta(zone: string) {
   ensureCache()
   return (
     metaById.get(zone) ?? {
@@ -80,17 +80,17 @@ export function getZoneMeta(zone: string): ZoneMeta {
   )
 }
 
-export function getZoneSearchEntries(): ZoneMeta[] {
+export function getZoneSearchEntries() {
   ensureCache()
   return searchEntries ?? []
 }
 
-export function resolveKnownZone(zone: string): string | null {
+export function resolveKnownZone(zone: string) {
   ensureCache()
   return metaById.get(zone)?.zone ?? null
 }
 
-export function zoneUsesHour12(zone: string): boolean {
+export function zoneUsesHour12(zone: string) {
   const meta = getZoneMeta(zone)
   if (!meta.countryCode) {
     return false

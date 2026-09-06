@@ -17,14 +17,7 @@ export type MeetingCopyInput = {
   hourFormat: HourFormat
 }
 
-export function formatMeetingCopy({
-  date,
-  start,
-  end,
-  home,
-  zones,
-  hourFormat,
-}: MeetingCopyInput): string {
+export function formatMeetingCopy({ date, start, end, home, zones, hourFormat }: MeetingCopyInput) {
   const startTimestamp = toTimestampFromHome(date, home, parseMinute(start))
   const endTimestamp = toTimestampFromHome(date, home, parseMinute(end))
   const lines = [formatCalendarDateLong(date, home)]

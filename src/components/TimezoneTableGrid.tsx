@@ -63,7 +63,7 @@ function todClassForHour(hour: number) {
 
 function tickToneClass(todClass: string, weekend: boolean, currentWeek: boolean) {
   if (currentWeek) {
-    return weekend ? 'bg-fuchsia-100' : 'bg-fuchsia-50'
+    return weekend ? 'bg-fuchsia-100/50' : 'bg-fuchsia-50/50'
   }
 
   if (weekend) {
@@ -395,7 +395,7 @@ export function TimezoneTableGrid() {
           transition={selectionTransition}
         >
           <h2 className="text-sm/6" id="selected-range-heading" ref={rangeCaptionRef}>
-            <span className="font-semibold text-indigo-700">{rangeHeading.title}</span>
+            <span className="font-semibold text-orange-800">{rangeHeading.title}</span>
             <span className="text-zinc-500"> · {rangeHeading.meta}</span>
           </h2>
         </MotionDiv>
@@ -419,7 +419,7 @@ export function TimezoneTableGrid() {
                   key={zone}
                   className={cn(
                     'group/zone flex items-center justify-between gap-1 border-r border-b border-zinc-950/10 py-1.5 pr-0.5 pl-2.5',
-                    isHome ? 'bg-indigo-50' : 'bg-white',
+                    isHome ? 'bg-orange-50' : 'bg-white',
                   )}
                   style={{ gridColumn: 1, gridRow: index + 1 }}
                   initial={{ opacity: 0 }}
@@ -435,7 +435,7 @@ export function TimezoneTableGrid() {
                         </span>
                         {isHome && (
                           <span
-                            className="mt-px inline-flex shrink-0 cursor-help items-center text-indigo-600"
+                            className="mt-px inline-flex shrink-0 cursor-help items-center text-orange-600"
                             aria-label="Home"
                           >
                             <HomeIcon className="size-3.5" />
@@ -549,7 +549,7 @@ export function TimezoneTableGrid() {
                   />
                 )}
                 <MotionDiv
-                  className="pointer-events-none absolute inset-y-0 z-20 rounded-md bg-indigo-500/10 ring-2 ring-indigo-700 ring-inset"
+                  className="pointer-events-none absolute inset-y-0 z-20 rounded-md bg-orange-500/10 ring-2 ring-orange-700 ring-inset"
                   initial={false}
                   animate={{ left: `${selectionLeft}px`, width: `${selectionWidth}px` }}
                   transition={selectionTransition}
@@ -557,14 +557,14 @@ export function TimezoneTableGrid() {
                 >
                   <div className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center">
                     <div
-                      className="pointer-events-auto h-10 w-2 -translate-x-1/2 cursor-ew-resize touch-manipulation rounded-full bg-indigo-700 shadow-sm select-none"
+                      className="pointer-events-auto h-10 w-2 -translate-x-1/2 cursor-ew-resize touch-manipulation rounded-full bg-orange-700 shadow-sm select-none"
                       onPointerDown={startResizeStart}
                       aria-label="Resize selection start"
                     />
                   </div>
                   <div className="pointer-events-none absolute inset-y-0 right-0 z-10 flex items-center">
                     <div
-                      className="pointer-events-auto h-10 w-2 translate-x-1/2 cursor-ew-resize touch-manipulation rounded-full bg-indigo-700 shadow-sm select-none"
+                      className="pointer-events-auto h-10 w-2 translate-x-1/2 cursor-ew-resize touch-manipulation rounded-full bg-orange-700 shadow-sm select-none"
                       onPointerDown={startResizeEnd}
                       aria-label="Resize selection end"
                     />
@@ -602,7 +602,7 @@ export function TimezoneTableGrid() {
                             'flex min-h-[34px] flex-col items-center justify-center gap-0.5 py-1.5 text-center text-xs/4',
                             'border-r border-b border-zinc-950/5',
                             toneClass,
-                            selected && '!bg-indigo-100',
+                            selected && '!bg-orange-100',
                           )}
                           key={`${zone}-${minute}`}
                           style={{ gridColumn: hourIndex + 1, gridRow: zoneIndex + 1 }}

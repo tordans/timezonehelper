@@ -53,7 +53,7 @@ export function SelectedRangeCard() {
       className="flex w-full min-w-0 items-start gap-3"
     >
       <Button
-        color="indigo"
+        color="orange"
         type="button"
         className="w-fit shrink-0"
         onClick={() => void copyTimes()}

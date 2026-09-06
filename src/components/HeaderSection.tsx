@@ -2,9 +2,9 @@ import { XMarkIcon } from '@heroicons/react/16/solid'
 import { AppLogo } from '@/components/AppLogo'
 import { useIntroCalloutActions, useIntroCalloutDismissed } from '@/state/intro-callout-store'
 
-const TITLE = 'Timezone Helper'
-const DESCRIPTION =
-  'Compare time zones and pick a meeting time. The URL is shareable, so anyone with the link sees the same zones, date, and range.'
+const TITLE = 'Timing Sparks'
+const SUBLINE = 'Find the overlap.'
+const DESCRIPTION = 'Compare cities on one day. Drag a range. Share the URL.'
 
 export function HeaderSection() {
   const dismissed = useIntroCalloutDismissed()
@@ -20,18 +20,21 @@ export function HeaderSection() {
   }
 
   return (
-    <section className="relative overflow-hidden rounded-lg bg-indigo-50 px-4 py-5 shadow-sm ring-1 ring-indigo-600/10 sm:p-6">
+    <section className="relative overflow-hidden rounded-lg bg-orange-50 px-4 py-5 shadow-sm ring-1 ring-orange-600/10 sm:p-6">
       <div className="flex items-start gap-4 sm:gap-5">
         <AppLogo className="size-16 shrink-0 sm:size-20" />
         <div className="min-w-0 flex-1 pr-8">
           <h1 className="text-2xl/8 font-semibold text-zinc-950 sm:text-xl/8">{TITLE}</h1>
-          <p className="mt-2 text-base/6 text-pretty text-indigo-900/70 sm:text-sm/6">
+          <p className="mt-1 text-lg/7 font-medium text-pretty text-orange-950 sm:text-base/6">
+            {SUBLINE}
+          </p>
+          <p className="mt-2 text-base/6 text-pretty text-orange-900/70 sm:text-sm/6">
             {DESCRIPTION}
           </p>
         </div>
         <button
           type="button"
-          className="relative -m-1.5 cursor-pointer rounded-md p-1.5 text-indigo-600/60 hover:bg-indigo-100 hover:text-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          className="relative -m-1.5 cursor-pointer rounded-md p-1.5 text-orange-600/60 hover:bg-orange-100 hover:text-orange-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600"
           aria-label="Dismiss introduction"
           onClick={() => dismissIntroCallout()}
         >

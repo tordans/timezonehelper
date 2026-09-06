@@ -61,8 +61,8 @@ export function ButtonGroup<T extends string>({
             value={option.value}
             className={cn(
               buttonGroupSegmentClassName({ isFirst, isLast }),
-              'data-checked:z-10 data-checked:bg-indigo-600 data-checked:text-white data-checked:inset-ring-indigo-600',
-              'data-checked:data-hover:bg-indigo-500',
+              'data-checked:z-10 data-checked:bg-orange-600 data-checked:text-white data-checked:inset-ring-orange-600',
+              'data-checked:data-hover:bg-orange-500',
             )}
           >
             <TouchTarget>{option.label}</TouchTarget>

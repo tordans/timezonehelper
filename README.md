@@ -1,4 +1,4 @@
-# Timezone Helper
+# Timing Sparks
 
 A Vite + React 19 SPA for comparing timezones and dragging a meeting range. URL search params are the source of truth, so a link is a shareable view.
 

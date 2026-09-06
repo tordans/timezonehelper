@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-const STORAGE_KEY = 'timezonehelper-intro-callout'
+const STORAGE_KEY = 'timingsparks-intro-callout'
 
 type IntroCalloutStore = {
   dismissed: boolean

@@ -13,7 +13,7 @@ export function CurrentWeekMark({ className }: { className?: string }) {
   return (
     <span
       aria-hidden="true"
-      className={cn('inline-block size-2.5 shrink-0 rounded-full bg-fuchsia-200', className)}
+      className={cn('inline-block size-2.5 shrink-0 rounded-full bg-fuchsia-100', className)}
     />
   )
 }

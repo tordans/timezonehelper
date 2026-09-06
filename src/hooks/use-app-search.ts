@@ -5,6 +5,17 @@ import { sortZonesByOffset } from '@/lib/time'
 
 const indexRouteApi = getRouteApi('/')
 
+type SearchNavigateOptions = {
+  replace?: boolean
+  resetScroll?: boolean
+}
+
+/** In-place search writes: replace history and keep scroll (filters, date, drag). */
+const filterSearchNavigateDefaults = {
+  replace: true,
+  resetScroll: false,
+} satisfies SearchNavigateOptions
+
 export function useAppSearch() {
   return indexRouteApi.useSearch()
 }
@@ -22,7 +33,9 @@ export function useSearchActions() {
   const navigate = useNavigate({ from: '/' })
   const search = useAppSearch()
 
-  function updateSearchPatch(patch: Partial<AppSearch>) {
+  function updateSearchPatch(patch: Partial<AppSearch>, options?: SearchNavigateOptions) {
+    const { replace, resetScroll } = { ...filterSearchNavigateDefaults, ...options }
+
     void navigate({
       search: (prev: AppSearch) => {
         const next: Record<string, unknown> = { ...prev }
@@ -37,7 +50,8 @@ export function useSearchActions() {
 
         return appSearchSchema.parse(next)
       },
-      replace: true,
+      replace,
+      resetScroll,
     })
   }
 

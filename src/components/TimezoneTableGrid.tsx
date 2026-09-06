@@ -355,17 +355,6 @@ export function TimezoneTableGrid() {
     hourTipTimeoutRef.current = window.setTimeout(applyHourTip, HOUR_TOOLTIP_DELAY_MS)
   }
 
-  useEffect(
-    function hideHourTipWhileDragging() {
-      if (!dragState) {
-        return
-      }
-
-      hideHourTip()
-    },
-    [dragState],
-  )
-
   useEffect(function clearHourTipTimeout() {
     return function cancelPendingHourTip() {
       cancelHourTipTimeout()

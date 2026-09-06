@@ -5,7 +5,14 @@ import viteReact from '@vitejs/plugin-react'
 import browserslistToEsbuild from 'browserslist-to-esbuild'
 import { defineConfig, searchForWorkspaceRoot } from 'vite'
 
+function pagesBase(): string {
+  const raw = process.env.PAGES_BASE_PATH
+  if (!raw || raw === '/') return '/'
+  return raw.endsWith('/') ? raw : `${raw}/`
+}
+
 export default defineConfig({
+  base: pagesBase(),
   plugins: [viteReact({ compiler: true }), tailwindcss()],
   resolve: {
     alias: {

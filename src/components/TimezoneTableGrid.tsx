@@ -1,3 +1,4 @@
+import { HomeIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { AnimatePresence, LayoutGroup } from 'motion/react'
 import { useRef, type PointerEvent } from 'react'
 import { MotionDiv } from '@/components/shared/motion'
@@ -27,7 +28,7 @@ const CELL_WIDTH = 54
 const SLOT_MARKERS = Array.from({ length: 24 }, (_, index) => index * SLOT_STEP)
 
 const rowActionClassName =
-  'min-h-11 cursor-pointer touch-manipulation select-none rounded border border-slate-300 bg-slate-50 px-3 text-[11px] active:bg-indigo-100 hover-fine:bg-indigo-50'
+  'inline-flex size-11 cursor-pointer touch-manipulation items-center justify-center rounded border border-slate-300 bg-slate-50 text-slate-700 select-none active:bg-indigo-100 hover-fine:bg-indigo-50'
 
 function minuteFromClientX(clientX: number, bounds: DOMRect): number {
   const relativeX = clamp(clientX - bounds.left - LABEL_WIDTH, 0, bounds.width - LABEL_WIDTH)
@@ -337,13 +338,14 @@ export function TimezoneTableGrid() {
                         </span>
                       </div>
                       {!isHome && (
-                        <div className="flex shrink-0 flex-col gap-1">
+                        <div className="flex shrink-0 gap-3">
                           <button
                             className={rowActionClassName}
                             type="button"
+                            aria-label={`Set ${meta.city} as home`}
                             onClick={() => setHome(zone)}
                           >
-                            Set home
+                            <HomeIcon className="size-5" aria-hidden="true" />
                           </button>
                           <button
                             className={cn(
@@ -351,10 +353,11 @@ export function TimezoneTableGrid() {
                               'disabled:pointer-events-none disabled:opacity-40',
                             )}
                             type="button"
+                            aria-label={`Remove ${meta.city}`}
                             disabled={search.zones.length <= 1}
                             onClick={() => removeZone(zone)}
                           >
-                            Remove
+                            <XMarkIcon className="size-5" aria-hidden="true" />
                           </button>
                         </div>
                       )}

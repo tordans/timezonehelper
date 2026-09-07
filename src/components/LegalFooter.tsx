@@ -1,9 +1,11 @@
 import * as Headless from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/16/solid'
 import { useEffect } from 'react'
+import { Button } from '@/components/catalyst/button'
 import { useAppSearch, useSearchActions } from '@/hooks/use-app-search'
 import { useUiMotion } from '@/hooks/use-ui-motion'
 import { applyLegalIndexing } from '@/lib/legal-indexing'
+import { clearLocalSiteData } from '@/state/recent-zones-store'
 
 const GITHUB_PRIVACY_HREF =
   'https://docs.github.com/site-policy/privacy-policies/github-privacy-statement'
@@ -78,8 +80,13 @@ export function LegalFooter() {
             gespeichert. Es gibt kein Webtracking und keine Cookies von uns.
           </p>
           <p>
-            Die Website speichert lokal im Browser (<code>localStorage</code>), ob der
-            Einführungshinweis geschlossen wurde. Dieser Wert wird nicht an einen Server gesendet.
+            Die Website speichert lokal im Browser (<code>localStorage</code>) zuletzt hinzugefügte
+            Zeitzonen für die Schnellauswahl. Dieser Wert wird nicht an einen Server gesendet.
+          </p>
+          <p className="not-prose">
+            <Button type="button" plain onClick={clearLocalSiteData}>
+              Lokale Daten löschen
+            </Button>
           </p>
           <p>
             Die Zeitzone des Browsers wird nur lokal gelesen, um die Startansicht vorzuschlagen.

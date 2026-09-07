@@ -1,12 +1,19 @@
 import { MagnifyingGlassIcon } from '@heroicons/react/16/solid'
 import { AnimatePresence } from 'motion/react'
-import { useRef, useState, type KeyboardEvent } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FocusEvent,
+  type KeyboardEvent,
+  type PointerEvent,
+} from 'react'
 import { Input, InputGroup } from '@/components/catalyst/input'
 import { MotionDiv, MotionLi, MotionUl } from '@/components/shared/motion'
 import { useAppSearch, useSearchActions } from '@/hooks/use-app-search'
 import { useUiMotion } from '@/hooks/use-ui-motion'
 import { cn } from '@/lib/cn'
-import { useTimezoneSearch } from '@/lib/timezone-search'
+import { useTimezoneSearch, type ZoneResult } from '@/lib/timezone-search'
 import { useSearchQuery, useUiActions } from '@/state/ui-store'
 
 const LISTBOX_ID = 'zone-search-results'
@@ -14,23 +21,36 @@ const LISTBOX_ID = 'zone-search-results'
 const resultButtonClassName =
   'group/option grid w-full cursor-pointer grid-cols-[1fr_auto] items-baseline gap-x-2 rounded-lg py-2.5 pr-2 pl-3.5 text-left text-base/6 touch-manipulation select-none disabled:cursor-default sm:py-1.5 sm:pr-2 sm:pl-3 sm:text-sm/6'
 
+const groupHeadingClassName = 'px-3.5 pt-1.5 pb-1 text-xs/5 font-medium text-zinc-500'
+
 export function ZoneSearchField() {
   const query = useSearchQuery()
   const { setQuery } = useUiActions()
-  const results = useTimezoneSearch(query)
+  const { lastUsed, all } = useTimezoneSearch(query)
   const search = useAppSearch()
   const { addZone } = useSearchActions()
   const [highlightedIndex, setHighlightedIndex] = useState(0)
+  const [isFocused, setIsFocused] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const blurCloseTimeoutRef = useRef(0)
   const { duration, prefersReducedMotion } = useUiMotion()
   const trimmedQuery = query.trim()
   const showHint = trimmedQuery.length === 1
-  const showResults = trimmedQuery.length >= 2
+  const showSearchResults = trimmedQuery.length >= 2
+  const showLastUsedOnly = isFocused && trimmedQuery.length === 0 && lastUsed.length > 0
+  const showResults = showSearchResults || showLastUsedOnly
   const listOpen = showHint || showResults
+  const results = [...lastUsed, ...all]
   const addedZones = new Set(search.zones)
   const activeIndex = results.length === 0 ? 0 : Math.min(highlightedIndex, results.length - 1)
   const activeOptionId =
     showResults && results[activeIndex] ? `zone-option-${activeIndex}` : undefined
+
+  useEffect(function clearDeferredBlurTimeoutOnUnmount() {
+    return function cancelDeferredBlurTimeout() {
+      window.clearTimeout(blurCloseTimeoutRef.current)
+    }
+  }, [])
 
   function addZoneAndResetQuery(zone: string) {
     if (addedZones.has(zone)) {
@@ -86,8 +106,70 @@ export function ZoneSearchField() {
     }
   }
 
+  function renderOption(result: ZoneResult, index: number) {
+    const alreadyAdded = addedZones.has(result.zone)
+    const isHighlighted = index === activeIndex
+
+    return (
+      <MotionLi
+        key={result.zone}
+        role="presentation"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0 }}
+        transition={{
+          duration,
+          delay: prefersReducedMotion ? 0 : Math.min(index, 6) * 0.04,
+        }}
+      >
+        <button
+          className={cn(
+            resultButtonClassName,
+            isHighlighted ? 'bg-blue-500 text-white' : 'text-zinc-950 active:bg-zinc-950/5',
+            alreadyAdded && 'opacity-50',
+          )}
+          type="button"
+          role="option"
+          id={`zone-option-${index}`}
+          aria-selected={isHighlighted}
+          aria-disabled={alreadyAdded}
+          disabled={alreadyAdded}
+          onPointerMove={() => setHighlightedIndex(index)}
+          onPointerDown={(event: PointerEvent<HTMLButtonElement>) => {
+            event.preventDefault()
+            if (!alreadyAdded) {
+              addZoneAndResetQuery(result.zone)
+            }
+          }}
+          onClick={() => addZoneAndResetQuery(result.zone)}
+        >
+          <span className="min-w-0 truncate">{result.label}</span>
+          <span className={cn('text-xs', isHighlighted ? 'text-white/80' : 'text-zinc-500')}>
+            {alreadyAdded ? 'In list' : result.zone}
+          </span>
+        </button>
+      </MotionLi>
+    )
+  }
+
   return (
-    <div className="relative">
+    <div
+      className="relative"
+      onFocus={() => {
+        window.clearTimeout(blurCloseTimeoutRef.current)
+        setIsFocused(true)
+      }}
+      onBlur={(event: FocusEvent<HTMLDivElement>) => {
+        const nextFocus = event.relatedTarget
+        if (nextFocus instanceof Node && event.currentTarget.contains(nextFocus)) {
+          return
+        }
+
+        blurCloseTimeoutRef.current = window.setTimeout(() => {
+          setIsFocused(false)
+        }, 0)
+      }}
+    >
       <InputGroup>
         <MagnifyingGlassIcon data-slot="icon" />
         <Input
@@ -176,49 +258,34 @@ export function ZoneSearchField() {
                   No matches found
                 </MotionLi>
               )}
-              {results.map((result, index) => {
-                const alreadyAdded = addedZones.has(result.zone)
-                const isHighlighted = index === activeIndex
-
-                return (
-                  <MotionLi
-                    key={result.zone}
-                    role="presentation"
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{
-                      duration,
-                      delay: prefersReducedMotion ? 0 : Math.min(index, 6) * 0.04,
-                    }}
-                  >
-                    <button
-                      className={cn(
-                        resultButtonClassName,
-                        isHighlighted
-                          ? 'bg-blue-500 text-white'
-                          : 'text-zinc-950 active:bg-zinc-950/5',
-                        alreadyAdded && 'opacity-50',
-                      )}
-                      type="button"
-                      role="option"
-                      id={`zone-option-${index}`}
-                      aria-selected={isHighlighted}
-                      aria-disabled={alreadyAdded}
-                      disabled={alreadyAdded}
-                      onPointerMove={() => setHighlightedIndex(index)}
-                      onClick={() => addZoneAndResetQuery(result.zone)}
-                    >
-                      <span className="min-w-0 truncate">{result.label}</span>
-                      <span
-                        className={cn('text-xs', isHighlighted ? 'text-white/80' : 'text-zinc-500')}
-                      >
-                        {alreadyAdded ? 'In list' : result.zone}
-                      </span>
-                    </button>
-                  </MotionLi>
-                )
-              })}
+              {lastUsed.length > 0 && (
+                <MotionLi
+                  key="heading-last-used"
+                  className={groupHeadingClassName}
+                  role="presentation"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration }}
+                >
+                  Last used
+                </MotionLi>
+              )}
+              {lastUsed.map((result, index) => renderOption(result, index))}
+              {all.length > 0 && (
+                <MotionLi
+                  key="heading-all"
+                  className={cn(groupHeadingClassName, lastUsed.length > 0 && 'mt-1')}
+                  role="presentation"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration }}
+                >
+                  All
+                </MotionLi>
+              )}
+              {all.map((result, index) => renderOption(result, lastUsed.length + index))}
             </AnimatePresence>
           </MotionUl>
         ) : null}

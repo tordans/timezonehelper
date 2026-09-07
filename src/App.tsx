@@ -1,5 +1,6 @@
 import { ControlsCard } from '@/components/ControlsCard'
 import { HeaderSection } from '@/components/HeaderSection'
+import { LegalFooter } from '@/components/LegalFooter'
 import { SelectedRangeCard } from '@/components/SelectedRangeCard'
 import { FadeInOnMount, sectionMountDelay } from '@/components/shared/motion'
 import { TimezoneTableGrid } from '@/components/TimezoneTableGrid'
@@ -25,6 +26,7 @@ function App() {
         <FadeInOnMount delay={sectionMountDelay(3)}>
           <SelectedRangeCard />
         </FadeInOnMount>
+        <LegalFooter />
       </div>
     </main>
   )

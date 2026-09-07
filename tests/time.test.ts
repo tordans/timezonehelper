@@ -29,6 +29,16 @@ describe('search normalization', () => {
     expect(normalized.home).toBe(normalized.zones[0])
     expect(normalized.start).toBe(IMPLICIT_RANGE_START)
     expect(normalized.end).toBe(IMPLICIT_RANGE_END)
+    expect(normalized).not.toHaveProperty('legal')
+  })
+
+  test('keeps legal open only for true-like values', () => {
+    expect(normalizeSearch({ legal: true }).legal).toBe(true)
+    expect(normalizeSearch({ legal: 'true' }).legal).toBe(true)
+    expect(normalizeSearch({ legal: 1 }).legal).toBe(true)
+
+    expect(normalizeSearch({ legal: false })).not.toHaveProperty('legal')
+    expect(normalizeSearch({ legal: '0' })).not.toHaveProperty('legal')
   })
 
   test('normalizes malformed ranges', () => {
@@ -110,6 +120,23 @@ describe('router search serialization', () => {
     })
     expect(encoded).toContain('start=14:00')
     expect(encoded).toContain('end=16:00')
+  })
+
+  test('omits legal from stringify when closed', () => {
+    const encoded = routerSearch.stringify({
+      zones: ['America/New_York'],
+    })
+
+    expect(encoded).not.toContain('legal=')
+  })
+
+  test('writes legal=true when the footer is open', () => {
+    const encoded = routerSearch.stringify({
+      zones: ['America/New_York'],
+      legal: true,
+    })
+
+    expect(encoded).toContain('legal=true')
   })
 })
 

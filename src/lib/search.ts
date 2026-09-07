@@ -42,6 +42,13 @@ const hourFormatSchema = z.preprocess(
   z.enum(['12', '24', 'mx']).default('mx').catch('mx'),
 )
 
+const legalOpenSchema = z.preprocess((value) => {
+  if (value === true || value === 'true' || value === 1 || value === '1') {
+    return true
+  }
+  return undefined
+}, z.literal(true).optional())
+
 const rawSearchSchema = z.object({
   zones: commaSeparatedZonesSchema,
   home: z.string().trim().optional(),
@@ -50,6 +57,7 @@ const rawSearchSchema = z.object({
   end: z.string().optional(),
   hourFormat: hourFormatSchema,
   sort: z.literal('offset').default('offset').catch('offset'),
+  legal: legalOpenSchema,
 })
 
 export const appSearchSchema = z
@@ -79,6 +87,7 @@ export const appSearchSchema = z
       end: formatMinute(normalizedEnd),
       hourFormat: value.hourFormat,
       sort: value.sort,
+      ...(value.legal === true ? { legal: true as const } : {}),
     }
   })
 

@@ -290,10 +290,13 @@ export function formatSelectedRangeHeading(
   const locale = dateFnsLocaleForCountry(getZoneMeta(homeZone).countryCode)
   const start = new TZDate(startTimestamp, homeZone)
   const weekPrefix = locale.code?.startsWith('de') ? 'KW' : 'Wk'
+  const weekday = format(start, 'EEE', { locale }).replace(/\.+$/u, '')
+  const date = `${weekday} ${shortDateWithoutYear(start, locale)}`
   const time = shortRangeTime(startTimestamp, endTimestamp, homeZone, hourFormat)
 
   return {
-    title: `${shortDateWithoutYear(start, locale)} · ${time}`,
+    date,
+    time,
     meta: `${durationLabel} · ${weekPrefix} ${getISOWeek(start)} · ${format(start, 'MMMM yyyy', { locale })}`,
   }
 }

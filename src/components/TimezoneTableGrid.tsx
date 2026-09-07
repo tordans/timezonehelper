@@ -387,7 +387,15 @@ export function TimezoneTableGrid() {
 
       setCaptionLeft(nextLeft)
     },
-    [rangeHeading.meta, rangeHeading.title, scrollLeft, selectionLeft, selectionWidth, zoneCount],
+    [
+      rangeHeading.date,
+      rangeHeading.meta,
+      rangeHeading.time,
+      scrollLeft,
+      selectionLeft,
+      selectionWidth,
+      zoneCount,
+    ],
   )
 
   return (
@@ -400,7 +408,9 @@ export function TimezoneTableGrid() {
           transition={selectionTransition}
         >
           <h2 className="text-sm/6" id="selected-range-heading" ref={rangeCaptionRef}>
-            <span className="font-semibold text-orange-800">{rangeHeading.title}</span>
+            <span className="font-semibold text-orange-800">
+              {rangeHeading.date} · {rangeHeading.time}
+            </span>
             <span className="text-zinc-500"> · {rangeHeading.meta}</span>
           </h2>
         </MotionDiv>
@@ -440,12 +450,14 @@ export function TimezoneTableGrid() {
                           {meta.city}
                         </span>
                         {isHome && (
-                          <span
-                            className="mt-px inline-flex shrink-0 cursor-help items-center text-orange-600"
-                            aria-label="Home"
-                          >
-                            <HomeIcon className="size-3.5" />
-                          </span>
+                          <Tooltip content="Home">
+                            <span
+                              className="mt-px inline-flex shrink-0 items-center text-orange-600"
+                              aria-label="Home"
+                            >
+                              <HomeIcon className="size-3.5" />
+                            </span>
+                          </Tooltip>
                         )}
                         {dstLabel != null && (
                           <Tooltip content={dstLabel}>

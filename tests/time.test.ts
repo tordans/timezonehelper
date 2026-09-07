@@ -222,8 +222,22 @@ describe('time helpers', () => {
     const end = toTimestampFromHome('2026-09-06', 'Europe/Berlin', 10 * 60)
     const heading = formatSelectedRangeHeading(start, end, 'Europe/Berlin', '24', '3h')
 
-    expect(heading.title).toBe('6.9. · 7–10')
+    expect(heading.date).toBe('So 6.9.')
+    expect(heading.time).toBe('7–10')
     expect(heading.meta).toBe('3h · KW 36 · September 2026')
+
+    const mondayStart = toTimestampFromHome('2026-09-07', 'Europe/Berlin', 5 * 60 + 35)
+    const mondayEnd = toTimestampFromHome('2026-09-07', 'Europe/Berlin', 9 * 60)
+    const mondayHeading = formatSelectedRangeHeading(
+      mondayStart,
+      mondayEnd,
+      'Europe/Berlin',
+      '24',
+      '3h 25m',
+    )
+
+    expect(mondayHeading.date).toBe('Mo 7.9.')
+    expect(mondayHeading.time).toBe('5:35–9:00')
   })
 
   test('shows minutes on both range times when either side is off the hour', () => {
@@ -231,6 +245,7 @@ describe('time helpers', () => {
     const end = toTimestampFromHome('2026-09-06', 'Europe/Berlin', 10 * 60)
     const heading = formatSelectedRangeHeading(start, end, 'Europe/Berlin', '24', '3h 15m')
 
-    expect(heading.title).toBe('6.9. · 6:45–10:00')
+    expect(heading.date).toBe('So 6.9.')
+    expect(heading.time).toBe('6:45–10:00')
   })
 })

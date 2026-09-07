@@ -1,4 +1,4 @@
-import { HomeIcon, XMarkIcon } from '@heroicons/react/16/solid'
+import { HomeIcon, SunIcon, XMarkIcon } from '@heroicons/react/16/solid'
 import { AnimatePresence } from 'motion/react'
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from 'react'
 import { createPortal } from 'react-dom'
@@ -11,6 +11,7 @@ import { ZoneSearchField } from '@/components/ZoneSearchCard'
 import { useAppSearch, useSearchActions, useSortedZones } from '@/hooks/use-app-search'
 import { useUiMotion } from '@/hooks/use-ui-motion'
 import { cn } from '@/lib/cn'
+import { formatDstRelativeLabel, upcomingDstChanges } from '@/lib/dst'
 import {
   addLeadingSign,
   clamp,
@@ -127,6 +128,12 @@ export function TimezoneTableGrid() {
   const nowLeft = (nowMinute / SLOT_STEP) * CELL_WIDTH
   const hoursTemplateColumns = `repeat(${SLOT_MARKERS.length}, ${CELL_WIDTH}px)`
   const zoneCount = sortedZones.length
+  const dstLabelByZone = new Map(
+    upcomingDstChanges(sortedZones, nowTimestamp).map((change) => [
+      change.zone,
+      formatDstRelativeLabel(change.at, nowTimestamp, search.home),
+    ]),
+  )
   const selectionTransition =
     dragState || prefersReducedMotion
       ? { duration: 0 }
@@ -413,6 +420,7 @@ export function TimezoneTableGrid() {
               const deltaHours = zoneDeltaHours(search.home, zone, offsetSampleTimestamp)
               const abbreviation = zoneAbbreviation(offsetSampleTimestamp, zone)
               const offsetLabel = isHome ? '0' : addLeadingSign(deltaHours)
+              const dstLabel = dstLabelByZone.get(zone)
 
               return (
                 <MotionDiv
@@ -440,6 +448,16 @@ export function TimezoneTableGrid() {
                           >
                             <HomeIcon className="size-3.5" />
                           </span>
+                        )}
+                        {dstLabel != null && (
+                          <Tooltip content={dstLabel}>
+                            <span
+                              className="mt-px inline-flex shrink-0 cursor-help items-center text-orange-600"
+                              aria-label={dstLabel}
+                            >
+                              <SunIcon className="size-3.5" />
+                            </span>
+                          </Tooltip>
                         )}
                       </span>
                       {isAutoAdded && (

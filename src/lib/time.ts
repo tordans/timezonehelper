@@ -198,7 +198,7 @@ export function isCurrentWeekInZone(timestamp: number, zone: string, now: Date =
   return isoWeekMonday(cellDate) === isoWeekMonday(today)
 }
 
-function dateFnsLocaleForCountry(countryCode: string) {
+export function dateFnsLocaleForCountry(countryCode: string) {
   switch (countryCode) {
     case 'AT':
     case 'CH':

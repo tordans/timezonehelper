@@ -1,50 +1,18 @@
-import { XMarkIcon } from '@heroicons/react/16/solid'
 import { AppLogo } from '@/components/AppLogo'
-import { useIntroCalloutActions, useIntroCalloutDismissed } from '@/state/intro-callout-store'
 
 const TITLE = 'Timing Sparks'
-const SUBLINE = 'Find the overlap.'
-const DESCRIPTION = 'Compare cities on one day. Drag a range. Share the URL.'
+const SUBLINE = 'Find and share a meeting time that works across time zones.'
 
 export function HeaderSection() {
-  const dismissed = useIntroCalloutDismissed()
-  const { dismissIntroCallout } = useIntroCalloutActions()
-
-  if (dismissed) {
-    return (
-      <div className="flex items-center gap-2.5">
-        <AppLogo className="size-7" />
-        <h1 className="text-lg/7 font-semibold text-zinc-950">{TITLE}</h1>
-      </div>
-    )
-  }
-
   return (
-    <section className="relative overflow-hidden rounded-lg bg-orange-50 px-4 py-5 shadow-sm ring-1 ring-orange-600/10 sm:p-6">
-      <div className="flex items-start gap-4 sm:gap-5">
-        <AppLogo className="size-16 shrink-0 sm:size-20" />
-        <div className="min-w-0 flex-1 pr-8">
-          <h1 className="text-2xl/8 font-semibold text-zinc-950 sm:text-xl/8">{TITLE}</h1>
-          <p className="mt-1 text-lg/7 font-medium text-pretty text-orange-950 sm:text-base/6">
-            {SUBLINE}
-          </p>
-          <p className="mt-2 text-base/6 text-pretty text-orange-900/70 sm:text-sm/6">
-            {DESCRIPTION}
-          </p>
-        </div>
-        <button
-          type="button"
-          className="relative -m-1.5 cursor-pointer rounded-md p-1.5 text-orange-600/60 hover:bg-orange-100 hover:text-orange-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600"
-          aria-label="Dismiss introduction"
-          onClick={() => dismissIntroCallout()}
-        >
-          <span
-            className="absolute top-1/2 left-1/2 size-[max(100%,2.75rem)] -translate-x-1/2 -translate-y-1/2 pointer-fine:hidden"
-            aria-hidden="true"
-          />
-          <XMarkIcon className="size-5" />
-        </button>
+    <header className="group flex w-fit min-w-0 items-center gap-2.5">
+      <AppLogo className="size-10" />
+      <div className="min-w-0 leading-none">
+        <h1 className="text-lg/none font-semibold text-zinc-950">{TITLE}</h1>
+        <p className="text-sm/none text-pretty text-zinc-300 transition-colors group-hover:text-zinc-500">
+          {SUBLINE}
+        </p>
       </div>
-    </section>
+    </header>
   )
 }

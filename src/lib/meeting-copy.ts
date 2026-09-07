@@ -13,7 +13,7 @@ export type MeetingCopyInput = {
   start: string
   end: string
   home: string
-  zones: string[]
+  zones: readonly string[]
   hourFormat: HourFormat
 }
 

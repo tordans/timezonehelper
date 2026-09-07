@@ -1,17 +1,16 @@
 import { HomeIcon, SunIcon, XMarkIcon } from '@heroicons/react/16/solid'
 import { AnimatePresence } from 'motion/react'
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from 'react'
-import { createPortal } from 'react-dom'
 import { Badge } from '@/components/catalyst/badge'
 import { Button } from '@/components/catalyst/button'
 import { MotionDiv } from '@/components/shared/motion'
 import { Kbd } from '@/components/ui/kbd'
-import { Tooltip } from '@/components/ui/tooltip'
+import { Tooltip, ViewportFixedTooltip } from '@/components/ui/tooltip'
 import { ZoneSearchField } from '@/components/ZoneSearchCard'
 import { useAppSearch, useSearchActions, useSortedZones } from '@/hooks/use-app-search'
 import { useUiMotion } from '@/hooks/use-ui-motion'
 import { cn } from '@/lib/cn'
-import { formatDstRelativeLabel, upcomingDstChanges } from '@/lib/dst'
+import { formatDstSunTooltip, upcomingDstChanges } from '@/lib/dst'
 import {
   addLeadingSign,
   clamp,
@@ -39,7 +38,6 @@ const LABEL_WIDTH = 240
 const CELL_WIDTH = 54
 const SLOT_MARKERS = Array.from({ length: 24 }, (_, index) => index * SLOT_STEP)
 const HOUR_TOOLTIP_DELAY_MS = 150
-const VIEWPORT_MARGIN = 16
 const zoneActionButtonClassName =
   'size-6 p-0! sm:p-0! *:data-[slot=icon]:m-0 *:data-[slot=icon]:size-3.5 sm:*:data-[slot=icon]:my-0 sm:*:data-[slot=icon]:size-3.5'
 
@@ -109,9 +107,10 @@ export function TimezoneTableGrid() {
   const [hourTip, setHourTip] = useState<{
     headline: string
     detail: string
-    top: number
-    left: number
-    placement: 'top' | 'bottom'
+    anchorX: number
+    triggerTop: number
+    triggerBottom: number
+    preferredPlacement: 'top' | 'bottom'
   } | null>(null)
 
   const startMinute = parseMinute(search.start)
@@ -131,7 +130,7 @@ export function TimezoneTableGrid() {
   const dstLabelByZone = new Map(
     upcomingDstChanges(sortedZones, nowTimestamp).map((change) => [
       change.zone,
-      formatDstRelativeLabel(change.at, nowTimestamp, search.home),
+      formatDstSunTooltip(change.at, nowTimestamp),
     ]),
   )
   const selectionTransition =
@@ -337,16 +336,15 @@ export function TimezoneTableGrid() {
       search.home,
     )
     const bounds = target.getBoundingClientRect()
-    const centerX = bounds.left + bounds.width / 2
-    const placement: 'top' | 'bottom' = window.innerHeight - bounds.bottom < 72 ? 'top' : 'bottom'
-    const top = placement === 'bottom' ? bounds.bottom + 8 : bounds.top - 8
-    const left = Math.min(Math.max(centerX, VIEWPORT_MARGIN), window.innerWidth - VIEWPORT_MARGIN)
+    const preferredPlacement: 'top' | 'bottom' =
+      window.innerHeight - bounds.bottom < 72 ? 'top' : 'bottom'
     const nextTip = {
       headline: copy.headline,
       detail: copy.detail,
-      top,
-      left,
-      placement,
+      anchorX: bounds.left + bounds.width / 2,
+      triggerTop: bounds.top,
+      triggerBottom: bounds.bottom,
+      preferredPlacement,
     }
 
     function applyHourTip() {
@@ -677,22 +675,17 @@ export function TimezoneTableGrid() {
             </span>
           </p>
         </div>
-        {hourTip
-          ? createPortal(
-              <span
-                role="tooltip"
-                className={cn(
-                  'pointer-events-none fixed z-50 w-max max-w-xs -translate-x-1/2 rounded-md bg-zinc-950 px-3 py-1.5 text-sm/5 font-medium text-white shadow-xs',
-                  hourTip.placement === 'top' && '-translate-y-full',
-                )}
-                style={{ top: hourTip.top, left: hourTip.left }}
-              >
-                <span className="block">{hourTip.headline}</span>
-                <span className="mt-0.5 block font-normal text-white/80">{hourTip.detail}</span>
-              </span>,
-              document.body,
-            )
-          : null}
+        {hourTip ? (
+          <ViewportFixedTooltip
+            anchorX={hourTip.anchorX}
+            triggerTop={hourTip.triggerTop}
+            triggerBottom={hourTip.triggerBottom}
+            preferredPlacement={hourTip.preferredPlacement}
+          >
+            <span className="block">{hourTip.headline}</span>
+            <span className="mt-0.5 block font-normal text-white/80">{hourTip.detail}</span>
+          </ViewportFixedTooltip>
+        ) : null}
       </div>
     </div>
   )

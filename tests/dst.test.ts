@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import {
   DST_WARNING_WINDOW_DAYS,
+  formatDstSunTooltip,
   formatDstWarningLines,
   nextOffsetChange,
   upcomingDstChanges,
@@ -76,5 +77,15 @@ describe('formatDstWarningLines', () => {
     expect(lines).not.toContain('America/New_York')
     expect(lines).not.toContain('Europe/Berlin')
     expect(lines).toMatch(/^New York City: in \d+ days\nBerlin: in \d+ days$/)
+  })
+})
+
+describe('formatDstSunTooltip', () => {
+  test('says what changes, not only when', () => {
+    const now = Date.UTC(2026, 9, 10)
+    const at = nextOffsetChange('America/New_York', now, untilFrom(now))
+
+    expect(at).not.toBeNull()
+    expect(formatDstSunTooltip(at!, now)).toMatch(/^Daylight saving changes in \d+ days$/)
   })
 })

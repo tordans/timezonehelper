@@ -46,9 +46,13 @@ export function upcomingDstChanges(
   return changes
 }
 
-export function formatDstRelativeLabel(at: number, now: number, homeZone: string): string {
+function formatDstRelativeLabel(at: number, now: number, homeZone: string): string {
   const locale = dateFnsLocaleForCountry(getZoneMeta(homeZone).countryCode)
   return formatDistanceStrict(at, now, { addSuffix: true, locale })
+}
+
+export function formatDstSunTooltip(at: number, now: number): string {
+  return `Daylight saving changes ${formatDistanceStrict(at, now, { addSuffix: true })}`
 }
 
 export function formatDstWarningLines(

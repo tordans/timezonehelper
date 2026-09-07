@@ -22,9 +22,9 @@ import {
 } from '@/lib/time'
 
 const HOUR_FORMAT_OPTIONS = [
-  { value: 'mx', label: 'Mixed' },
   { value: '12', label: '12h' },
   { value: '24', label: '24h' },
+  { value: 'mx', label: 'Local' },
 ] as const satisfies ReadonlyArray<{ value: HourFormat; label: string }>
 
 export function ControlsCard() {
@@ -120,7 +120,9 @@ export function ControlsCard() {
               options={HOUR_FORMAT_OPTIONS}
               onChange={(hourFormat) => updateSearchPatch({ hourFormat })}
             />
-            <InfoHint label="Hour format">Mixed uses each location's usual 12/24 format.</InfoHint>
+            <InfoHint label="Hour format">
+              Local uses each location's usual 12- or 24-hour clock.
+            </InfoHint>
           </div>
         </Field>
       </div>

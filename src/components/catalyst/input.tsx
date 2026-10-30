@@ -30,7 +30,8 @@ export const Input = forwardRef(function Input(
   }: {
     className?: string
     type?: 'email' | 'number' | 'password' | 'search' | 'tel' | 'text' | 'url' | DateType
-  } & Omit<Headless.InputProps, 'as' | 'className'>,
+    children?: React.ReactNode
+  } & Omit<Headless.InputProps, 'as' | 'className' | 'children'>,
   ref: React.ForwardedRef<HTMLInputElement>,
 ) {
   return (
